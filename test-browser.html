@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Order Concierge - Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Salesforce Order Concierge Test Interface</h1>
+        <p>Test your Railway MCP server with real Salesforce data</p>
+
+        <div class="input-group">
+            <label for="tool-select">Select Tool:</label>
+            <select id="tool-select" onchange="updateForm()">
+                <option value="check_order_status">Check Order Status</option>
+                <option value="create_return">Create Return</option>
+                <option value="email_return_label">Email Return Label</option>
+            </select>
+        </div>
+
+        <!-- Order Status Form -->
+        <div id="order-status-form">
+            <div class="input-group">
+                <label for="order-id">Order ID/Number:</label>
+                <input type="text" id="order-id" placeholder="Enter real Salesforce Order Number (e.g., 00000123)" />
+            </div>
+        </div>
+
+        <!-- Create Return Form -->
+        <div id="create-return-form" style="display: none;">
+            <div class="input-group">
+                <label for="return-order-id">Order ID:</label>
+                <input type="text" id="return-order-id" placeholder="Order ID" />
+            </div>
+            <div class="input-group">
+                <label for="line-item-id">Line Item ID:</label>
+                <input type="text" id="line-item-id" placeholder="OrderItem ID (e.g., 00k000000123456)" />
+            </div>
+            <div class="input-group">
+                <label for="return-reason">Return Reason:</label>
+                <input type="text" id="return-reason" placeholder="e.g., Product defective" />
+            </div>
+            <div class="input-group">
+                <label for="return-quantity">Quantity:</label>
+                <input type="number" id="return-quantity" value="1" min="1" />
+            </div>
+        </div>
+
+        <!-- Email Return Label Form -->
+        <div id="email-label-form" style="display: none;">
+            <div class="input-group">
+                <label for="return-id">Return ID:</label>
+                <input type="text" id="return-id" placeholder="Return Record ID (e.g., a0X000000123456)" />
+            </div>
+            <div class="input-group">
+                <label for="customer-email">Customer Email:</label>
+                <input type="email" id="customer-email" placeholder="customer@example.com" />
+            </div>
+        </div>
+
+        <div>
+            <button onclick="testTool()">🧪 Test Tool</button>
+            <button onclick="listTools()">📋 List All Tools</button>
+            <button onclick="healthCheck()">💚 Health Check</button>
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://sfmcpoc-production.up.railway.app';
+
+        function updateForm() {
+            const tool = document.getElementById('tool-select').value;
+            document.getElementById('order-status-form').style.display = tool === 'check_order_status' ? 'block' : 'none';
+            document.getElementById('create-return-form').style.display = tool === 'create_return' ? 'block' : 'none';
+            document.getElementById('email-label-form').style.display = tool === 'email_return_label' ? 'block' : 'none';
+        }
+
+        function showResult(content, type = 'success') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        async function healthCheck() {
+            showResult('Checking server health...', 'loading');
+            try {
+                const response = await fetch(`${BASE_URL}/health`);
+                const data = await response.json();
+                showResult(`✅ Server is healthy!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`❌ Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function listTools() {
+            showResult('Fetching available tools...', 'loading');
+            try {
+                const response = await fetch(`${BASE_URL}/mcp/tools/list`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                let output = '✅ Available MCP Tools:\n\n';
+                if (data.tools) {
+                    data.tools.forEach((tool, i) => {
+                        output += `${i + 1}. ${tool.name}\n   ${tool.description}\n\n`;
+                    });
+                } else {
+                    output += JSON.stringify(data, null, 2);
+                }
+                
+                showResult(output, 'success');
+            } catch (error) {
+                showResult(`❌ Failed to list tools: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTool() {
+            const tool = document.getElementById('tool-select').value;
+            let arguments = {};
+
+            // Build arguments based on selected tool
+            switch (tool) {
+                case 'check_order_status':
+                    arguments.orderId = document.getElementById('order-id').value;
+                    if (!arguments.orderId) {
+                        showResult('❌ Please enter an Order ID', 'error');
+                        return;
+                    }
+                    break;
+                case 'create_return':
+                    arguments = {
+                        orderId: document.getElementById('return-order-id').value,
+                        lineItemId: document.getElementById('line-item-id').value,
+                        reason: document.getElementById('return-reason').value,
+                        quantity: parseInt(document.getElementById('return-quantity').value)
+                    };
+                    if (!arguments.orderId || !arguments.lineItemId || !arguments.reason) {
+                        showResult('❌ Please fill in all required fields', 'error');
+                        return;
+                    }
+                    break;
+                case 'email_return_label':
+                    arguments = {
+                        returnId: document.getElementById('return-id').value,
+                        customerEmail: document.getElementById('customer-email').value
+                    };
+                    if (!arguments.returnId || !arguments.customerEmail) {
+                        showResult('❌ Please fill in all required fields', 'error');
+                        return;
+                    }
+                    break;
+            }
+
+            showResult(`🔄 Calling ${tool} with real Salesforce data...`, 'loading');
+
+            try {
+                const response = await fetch(`${BASE_URL}/mcp/tools/call`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: tool,
+                        arguments: arguments
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const resultText = data.result.content[0].text;
+                    showResult(`✅ Success!\n\n${resultText}`, 'success');
+                } else {
+                    showResult(`❌ Tool execution failed:\n\n${data.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Request failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize form
+        updateForm();
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Salesforce Order Concierge MCP",
+    "description": "Test collection for Railway MCP server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/health",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "List MCP Tools",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/list",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "list"]
+        }
+      }
+    },
+    {
+      "name": "Check Order Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"check_order_status\",\n  \"arguments\": {\n    \"orderId\": \"00000123\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    },
+    {
+      "name": "Create Return",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"orderId\": \"00000123\",\n    \"lineItemId\": \"00k000000123456\",\n    \"reason\": \"Product defective\",\n    \"quantity\": 1\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    },
+    {
+      "name": "Email Return Label",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"email_return_label\",\n  \"arguments\": {\n    \"returnId\": \"a0X000000123456\",\n    \"customerEmail\": \"customer@example.com\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    }
+  ]
+}
