@@ -198,20 +198,147 @@ class OrderConciergeServer {
   async run() {
     // Start HTTP health check server for Railway
     const port = process.env.PORT || 3000;
-    const httpServer = createServer((req, res) => {
-      if (req.url === '/health' || req.url === '/') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+    const httpServer = createServer(async (req, res) => {
+      const url = new URL(req.url || '/', `http://${req.headers.host}`);
+      
+      // Set CORS headers for demo purposes
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      
+      if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+
+      try {
+        if (url.pathname === '/health' || url.pathname === '/') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            status: 'healthy',
+            service: 'Salesforce Order Concierge MCP Server',
+            version: '1.0.0',
+            capabilities: ['check_order_status', 'create_return', 'email_return_label'],
+            demo_endpoints: [
+              '/demo/order-status?orderId=12345',
+              '/demo/tools',
+              '/demo/docs'
+            ]
+          }));
+        } 
+        else if (url.pathname === '/demo/tools') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            tools: [
+              {
+                name: 'check_order_status',
+                description: 'Check order shipping status, carrier, tracking number, and ETA',
+                example: '/demo/order-status?orderId=12345'
+              },
+              {
+                name: 'create_return',
+                description: 'Create a return (RMA) for a single line item',
+                example: 'POST /demo/return with JSON body'
+              },
+              {
+                name: 'email_return_label',
+                description: 'Email customer a PDF return label',
+                example: 'POST /demo/return-label with JSON body'
+              }
+            ]
+          }));
+        }
+        else if (url.pathname === '/demo/order-status') {
+          const orderId = url.searchParams.get('orderId');
+          if (!orderId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'orderId parameter required' }));
+            return;
+          }
+          
+          // Demo response (not connected to real Salesforce)
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            demo: true,
+            message: 'This is a demo response. Real implementation requires Salesforce connection.',
+            orderId: orderId,
+            status: 'Shipped',
+            carrier: 'UPS',
+            trackingNumber: 'UPS123456789',
+            estimatedDelivery: '2024-07-02',
+            shippingAddress: {
+              street: '123 Demo Street',
+              city: 'Demo City',
+              state: 'CA',
+              zipCode: '12345',
+              country: 'USA'
+            }
+          }));
+        }
+        else if (url.pathname === '/demo/docs') {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>Salesforce Order Concierge - Demo</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                .endpoint { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+                .method { color: #0066cc; font-weight: bold; }
+                code { background: #eee; padding: 2px 4px; border-radius: 3px; }
+              </style>
+            </head>
+            <body>
+              <h1>🛍️ Salesforce Order Concierge MCP Server</h1>
+              <p>This is a Model Context Protocol (MCP) server for ecommerce customer service operations.</p>
+              
+              <h2>🚀 Demo Endpoints</h2>
+              <div class="endpoint">
+                <div class="method">GET</div>
+                <strong>/health</strong> - Server health check
+              </div>
+              
+              <div class="endpoint">
+                <div class="method">GET</div>
+                <strong>/demo/tools</strong> - List available MCP tools
+              </div>
+              
+              <div class="endpoint">
+                <div class="method">GET</div>
+                <strong>/demo/order-status?orderId=12345</strong> - Demo order status check
+              </div>
+              
+              <h2>🔧 Real Usage</h2>
+              <p>This server is designed to work with <strong>Claude Desktop</strong> via the MCP protocol, not HTTP requests.</p>
+              <p>For production use, configure it in Claude Desktop's MCP settings.</p>
+              
+              <h2>🎯 Capabilities</h2>
+              <ul>
+                <li>Check order shipping status and tracking</li>
+                <li>Create returns (RMA) for line items</li>
+                <li>Email return labels to customers</li>
+              </ul>
+              
+              <p><em>Demo responses are mock data. Real implementation connects to Salesforce.</em></p>
+            </body>
+            </html>
+          `);
+        }
+        else {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: 'Not Found',
+            message: 'This is an MCP server. Available demo endpoints: /health, /demo/tools, /demo/order-status, /demo/docs',
+            available_endpoints: ['/health', '/demo/tools', '/demo/order-status?orderId=12345', '/demo/docs']
+          }));
+        }
+      } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          status: 'healthy',
-          service: 'Salesforce Order Concierge MCP Server',
-          version: '1.0.0',
-          capabilities: ['check_order_status', 'create_return', 'email_return_label']
-        }));
-      } else {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          error: 'Not Found',
-          message: 'This is an MCP server. Use MCP protocol for communication.'
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Unknown error'
         }));
       }
     });
