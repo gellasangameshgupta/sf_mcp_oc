@@ -26,14 +26,29 @@ export class SalesforceClient {
 
   async getOrderStatus(orderId: string): Promise<OrderStatus> {
     try {
-      const orderQuery = `
-        SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-               EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-               ShippingState, ShippingPostalCode, ShippingCountry
-        FROM Order 
-        WHERE OrderNumber = '${orderId}'
-        LIMIT 1
-      `;
+      // Check if orderId looks like a Salesforce ID (15 or 18 chars, alphanumeric)
+      const isSalesforceId = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(orderId);
+      
+      let orderQuery;
+      if (isSalesforceId) {
+        orderQuery = `
+          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
+                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
+                 ShippingState, ShippingPostalCode, ShippingCountry
+          FROM Order 
+          WHERE Id = '${orderId}'
+          LIMIT 1
+        `;
+      } else {
+        orderQuery = `
+          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
+                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
+                 ShippingState, ShippingPostalCode, ShippingCountry
+          FROM Order 
+          WHERE OrderNumber = '${orderId}'
+          LIMIT 1
+        `;
+      }
 
       const result = await this.conn.query(orderQuery);
       
