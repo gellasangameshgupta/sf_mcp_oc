@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "salesforce-order-concierge": {
+      "command": "node",
+      "args": ["/Users/gellasangamesh/Downloads/Manual Library/Coding/Salesforce/sf_mcp_oc/dist/index.js"],
+      "env": {
+        "SF_LOGIN_URL": "https://login.salesforce.com",
+        "SF_USERNAME": "your-salesforce-username",
+        "SF_PASSWORD": "your-salesforce-password",
+        "SF_SECURITY_TOKEN": "your-security-token"
+      }
+    }
+  }
+}
