@@ -8,6 +8,7 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
+import { createServer } from 'http';
 import { SalesforceClient } from './salesforce-client.js';
 import { OrderStatusSchema, ReturnRequestSchema, ReturnLabelRequestSchema, SalesforceConfig } from './types.js';
 
@@ -195,6 +196,31 @@ class OrderConciergeServer {
   }
 
   async run() {
+    // Start HTTP health check server for Railway
+    const port = process.env.PORT || 3000;
+    const httpServer = createServer((req, res) => {
+      if (req.url === '/health' || req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'healthy',
+          service: 'Salesforce Order Concierge MCP Server',
+          version: '1.0.0',
+          capabilities: ['check_order_status', 'create_return', 'email_return_label']
+        }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: 'Not Found',
+          message: 'This is an MCP server. Use MCP protocol for communication.'
+        }));
+      }
+    });
+
+    httpServer.listen(port, () => {
+      console.error(`HTTP health server running on port ${port}`);
+    });
+
+    // Start MCP server on stdio
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error('Order Concierge MCP server running on stdio');
