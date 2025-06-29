@@ -44,7 +44,7 @@ export class SalesforceClient {
       const order = result.records[0] as any;
       
       return {
-        orderId: order.OrderNumber || order.Id,
+        orderId: order.OrderNumber,
         status: order.Status,
         carrier: order.ShippingCarrier__c,
         trackingNumber: order.TrackingNumber__c,
