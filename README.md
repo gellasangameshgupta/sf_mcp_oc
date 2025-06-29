@@ -220,4 +220,4 @@ Orders should have:
 
 ---
 
-Built with ❤️ for seamless Salesforce-Claude integration
+Built with ❤️ for seamless Salesforce integration
