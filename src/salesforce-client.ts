@@ -31,7 +31,7 @@ export class SalesforceClient {
                EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
                ShippingState, ShippingPostalCode, ShippingCountry
         FROM Order 
-        WHERE OrderNumber = '${orderId}' OR Id = '${orderId}'
+        WHERE OrderNumber = '${orderId}'
         LIMIT 1
       `;
 
