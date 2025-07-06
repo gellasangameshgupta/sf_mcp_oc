@@ -114,7 +114,7 @@ export class SalesforceClient {
                 ReturnOrderId: returnOrderResult.id,
                 OrderItemId: returnRequest.lineItemId,
                 Product2Id: orderItem.Product2Id,
-                QuantityToReturn: returnRequest.quantity,
+                QuantityRejected: returnRequest.quantity,
                 UnitPrice: orderItem.UnitPrice,
                 ReasonCode: returnRequest.reason,
                 Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason}`
