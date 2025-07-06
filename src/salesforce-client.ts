@@ -365,7 +365,7 @@ export class SalesforceClient {
     }
   }
 
-  private createCaseFromReturn(returnOrderId: string): Promise<string> {
+  async createCaseFromReturn(returnOrderId: string): Promise<string> {
     try {
       // Input validation
       if (!returnOrderId || typeof returnOrderId !== 'string') {

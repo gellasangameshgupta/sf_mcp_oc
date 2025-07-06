@@ -128,6 +128,7 @@ export class SalesforceClient {
                 Id: returnOrderResult.id,
                 Status: 'Submitted'
             });
+            this.createCaseFromReturn(returnOrderResult.id);
             return returnOrderResult.id;
         }
         catch (error) {
