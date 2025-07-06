@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ReturnOrder.CaseId__c</members>
+        <members>ReturnOrder.LabelEmailSent__c</members>
+        <members>ReturnOrder.LabelEmailSentDate__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>ReturnOrder_Label_Email_Management</members>
+        <members>ReturnOrder_Status_Change_Notifications</members>
+        <name>Flow</name>
+    </types>
+    <version>58.0</version>
+</Package>

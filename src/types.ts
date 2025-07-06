@@ -18,18 +18,37 @@ export const OrderStatusSchema = z.object({
 export const ReturnRequestSchema = z.object({
   orderId: z.string(),
   lineItemId: z.string(),
-  reason: z.string(),
-  quantity: z.number().min(1)
+  reason: z.enum(['Defective', 'Damaged', 'Wrong Item', 'Not Needed', 'Quality Issue', 'Size/Color', 'Other']),
+  quantity: z.number().min(1),
+  description: z.string().optional()
 });
 
 export const ReturnLabelRequestSchema = z.object({
-  returnId: z.string(),
+  returnOrderId: z.string(),
   customerEmail: z.string()
+});
+
+export const CaseStatusUpdateSchema = z.object({
+  caseId: z.string(),
+  status: z.enum(['New', 'Working', 'Escalated', 'Closed']),
+  reason: z.string().optional(),
+  priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  assignedTo: z.string().optional()
+});
+
+export const SlackAlertSchema = z.object({
+  message: z.string(),
+  channel: z.string().optional(),
+  priority: z.enum(['info', 'warning', 'error', 'critical']).default('info'),
+  caseId: z.string().optional(),
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 export type ReturnRequest = z.infer<typeof ReturnRequestSchema>;
 export type ReturnLabelRequest = z.infer<typeof ReturnLabelRequestSchema>;
+export type CaseStatusUpdate = z.infer<typeof CaseStatusUpdateSchema>;
+export type SlackAlert = z.infer<typeof SlackAlertSchema>;
 
 export interface SalesforceConfig {
   loginUrl: string;
@@ -38,4 +57,6 @@ export interface SalesforceConfig {
   securityToken?: string;
   clientId?: string;
   clientSecret?: string;
+  slackWebhookUrl?: string;
+  slackDefaultChannel?: string;
 }

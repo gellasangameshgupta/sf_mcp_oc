@@ -1,15 +1,19 @@
 # Salesforce Order Concierge MCP Server
 
-A Model Context Protocol (MCP) server that provides white-glove ecommerce assistant capabilities for Salesforce. This server enables Claude Desktop to interact with Salesforce orders, returns, and customer service operations.
+A comprehensive Model Context Protocol (MCP) server that provides white-glove ecommerce assistant capabilities for Salesforce. This server enables Claude Desktop to interact with Salesforce orders, returns, and customer service operations using **standard Salesforce objects**.
 
-## 🎯 Purpose
+## 🎯 Overview
 
-The Order Concierge acts as a sophisticated customer service assistant that can:
-- Check order shipping status, carrier information, and delivery estimates
-- Create returns (RMA) for individual line items
-- Email pre-generated return labels to customers
+The Order Concierge acts as a sophisticated customer service assistant that integrates with Salesforce's standard **ReturnOrder** and **ReturnOrderLineItem** objects, providing:
 
-## 🛠 Capabilities
+- **Order status checking** with shipping details and tracking information
+- **Return order creation** using standard Salesforce objects  
+- **Case management integration** for customer service escalation
+- **Slack notification system** for real-time alerts
+- **Return label email automation** for customer convenience
+- **Flow-based automation** for modern Salesforce workflows
+
+## 🛠 MCP Server Capabilities
 
 ### Available Tools
 
@@ -19,53 +23,115 @@ The Order Concierge acts as a sophisticated customer service assistant that can:
    - Input: `orderId` (Order ID or Order Number)
 
 2. **`create_return`**
-   - Creates return merchandise authorization (RMA) for specific line items
-   - Inputs: `orderId`, `lineItemId`, `reason`, `quantity`
-   - Returns: Return ID for tracking
+   - Creates ReturnOrder and ReturnOrderLineItem records using standard objects
+   - Validates quantity against original order
+   - Inputs: `orderId`, `lineItemId`, `reason`, `quantity`, `description` (optional)
+   - Returns: ReturnOrder ID for tracking
 
 3. **`email_return_label`**
    - Sends PDF return shipping labels to customer email
-   - Inputs: `returnId`, `customerEmail`
-   - Confirms successful delivery
+   - Only works for approved return orders
+   - Inputs: `returnOrderId`, `customerEmail`
+   - Tracks email sent status and timestamp
 
-## 📋 Prerequisites
+4. **`update_case_status`**
+   - Updates case status with validation and audit trail
+   - Supports case assignment and priority changes  
+   - Inputs: `caseId`, `status`, `reason`, `priority`, `assignedTo`
+   - Sends automatic Slack notifications
 
-- Node.js 18+ 
-- Salesforce org with appropriate permissions
-- Claude Desktop application
+5. **`create_case_from_return`**
+   - Creates support cases from return orders
+   - Includes return details and line item information
+   - Input: `returnOrderId`
+   - Returns: Case ID for tracking
+
+6. **`send_slack_alert`**
+   - Sends formatted alerts to Slack channels
+   - Priority-based formatting and icons
+   - Inputs: `message`, `channel`, `priority`, `caseId`, `customFields`
+
+## 🏗 Salesforce Architecture
+
+### Standard Objects Used
+
+- **ReturnOrder** - Standard Salesforce object for return management
+- **ReturnOrderLineItem** - Standard object for individual return items
+- **Case** - Standard object for customer service integration
+- **Order/OrderItem** - Standard objects for order relationships
+
+### Custom Enhancements
+
+#### Custom Fields on ReturnOrder
+- **CaseId__c** - Links return orders to support cases
+- **LabelEmailSent__c** - Tracks if return label was emailed
+- **LabelEmailSentDate__c** - Timestamp of label email
+
+#### Flow Automation
+- **ReturnOrder_Label_Email_Management** - Manages email timestamp automation
+- **ReturnOrder_Status_Change_Notifications** - Logs status changes as audit tasks
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### Prerequisites
+
+1. **Salesforce CLI** installed
+   ```bash
+   npm install -g @salesforce/cli
+   sf --version
+   ```
+
+2. **Salesforce Org Requirements:**
+   - Service Cloud or Field Service license
+   - Order Management enabled
+   - Admin access for deployment
+
+### 1. Deploy Salesforce Metadata
 
 ```bash
-# Clone or navigate to project directory
-cd sf_mcp_oc
+# Navigate to project directory
+cd /path/to/sf_mcp_oc
 
-# Install dependencies
-npm install
+# Authenticate to your org
+sf org login web --alias MyOrg
 
-# Build the project
-npm run build
+# Deploy metadata
+sf project deploy start --target-org MyOrg
+
+# Alternative: deploy via manifest
+sf project deploy start --manifest package.xml --target-org MyOrg
 ```
 
-### 2. Salesforce Configuration
+### 2. Configure Permissions
 
-Create `.env` file with your Salesforce credentials:
+Since this deployment doesn't include a permission set, configure permissions manually:
 
-```env
+**Option A: Via Profiles**
+1. Setup → Profiles → Edit relevant profiles
+2. Object Settings → Return Order: Enable Read, Create, Edit, Delete
+3. Object Settings → Return Order Line Item: Enable Read, Create, Edit, Delete
+
+**Option B: Create Custom Permission Set**
+1. Setup → Permission Sets → New
+2. Add object permissions for ReturnOrder and ReturnOrderLineItem
+3. Add field permissions for custom fields
+4. Assign to users
+
+### 3. Configure MCP Server
+
+#### Environment Variables
+```bash
 SF_LOGIN_URL=https://login.salesforce.com
-SF_USERNAME=your-salesforce-username
-SF_PASSWORD=your-salesforce-password
+SF_USERNAME=your-username
+SF_PASSWORD=your-password
 SF_SECURITY_TOKEN=your-security-token
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+SLACK_DEFAULT_CHANNEL=#returns
 ```
 
-### 3. Claude Desktop Integration
+#### Claude Desktop Configuration
+Add to your Claude Desktop config:
 
-The server is already configured in Claude Desktop at:
-`~/Library/Application Support/Claude/claude_desktop_config.json`
-
-Configuration entry:
 ```json
 {
   "mcpServers": {
@@ -83,141 +149,180 @@ Configuration entry:
 }
 ```
 
-### 4. Usage
+### 4. Local Development
 
-1. **Restart Claude Desktop** to load the MCP server
-2. **Test the connection** by asking Claude:
-   - "What order management tools do you have?"
-   - "Check the status of order 12345"
-   - "I need to return an item from my recent order"
+```bash
+# Install dependencies
+npm install
 
-## 🏗 Project Structure
+# Build TypeScript
+npm run build
+
+# Test locally
+node dist/index.js
+```
+
+## 🔧 Deployment Options
+
+### Option 1: Modern Salesforce CLI (Recommended)
+```bash
+sf org login web --alias MyOrg
+sf project deploy start --target-org MyOrg
+```
+
+### Option 2: Legacy CLI
+```bash
+sfdx auth:web:login -a MyOrg
+sfdx force:source:deploy -x package.xml -u MyOrg
+```
+
+### Option 3: Workbench
+1. Go to [Workbench](https://workbench.developerforce.com/)
+2. Navigate to Migration → Deploy
+3. Upload `force-app` folder as ZIP
+4. Deploy with rollback enabled
+
+## 📊 Standard Object Details
+
+### ReturnOrder Standard Fields
+- **ReturnOrderNumber** - Auto-generated return number
+- **OrderId** - Lookup to original Order
+- **AccountId** - Lookup to Account  
+- **Status** - Draft, Submitted, Approved, Cancelled, Partially Fulfilled, Fulfilled
+- **ReturnOrderDate** - Date of return request
+- **Description** - Return description
+- **TotalAmount** - Total return amount
+
+### ReturnOrderLineItem Standard Fields  
+- **ReturnOrderId** - Master-detail to ReturnOrder
+- **OrderItemId** - Lookup to original OrderItem
+- **Product2Id** - Lookup to Product
+- **Quantity** - Quantity to return
+- **ReasonCode** - Return reason (Defective, Damaged, Wrong Item, etc.)
+- **UnitPrice/TotalPrice** - Pricing information
+
+## 🎛 Tool Examples
+
+### Create Return
+```javascript
+{
+  "orderId": "801xx0000000001",
+  "lineItemId": "802xx0000000001", 
+  "reason": "Defective",
+  "quantity": 1,
+  "description": "Product stopped working after 2 days"
+}
+```
+
+### Email Return Label
+```javascript
+{
+  "returnOrderId": "0OR5x0000000001",
+  "customerEmail": "customer@example.com"
+}
+```
+
+### Update Case Status
+```javascript
+{
+  "caseId": "500xx0000000001",
+  "status": "Working",
+  "reason": "Investigating return request",
+  "priority": "High"
+}
+```
+
+## 🔍 Testing
+
+### Verify Object Access
+```sql
+-- Test ReturnOrder access
+SELECT Id, ReturnOrderNumber, Status FROM ReturnOrder LIMIT 1
+
+-- Test ReturnOrderLineItem access  
+SELECT Id, Quantity, ReasonCode FROM ReturnOrderLineItem LIMIT 1
+```
+
+### Test MCP Tools
+Use the test files provided:
+- `test-mcp.js` - Local MCP testing
+- `test-railway-mcp.js` - Railway deployment testing
+- `postman-collection.json` - API testing collection
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+1. **"ReturnOrder object not found"**
+   - Verify Service Cloud or Field Service license
+   - Enable Order Management: Setup → Sales → Order Settings
+   - Check user permissions for standard objects
+
+2. **"Insufficient Privileges" errors**
+   - Configure object permissions via Profiles or Permission Sets
+   - Verify CRUD permissions on ReturnOrder/ReturnOrderLineItem
+   - Check field-level security for custom fields
+
+3. **MCP Server Connection Issues**
+   - Verify environment variables are correctly set
+   - Check Salesforce API user permissions
+   - Ensure custom fields are accessible via API
+
+4. **Flow Automation Not Working**
+   - Verify flows are active in Setup → Flows
+   - Check flow trigger conditions
+   - Ensure custom fields exist and are accessible
+
+5. **Slack Notifications Failing**
+   - Verify SLACK_WEBHOOK_URL format
+   - Check Slack channel permissions
+   - Review server logs for detailed errors
+
+## 📁 Project Structure
 
 ```
 sf_mcp_oc/
-├── src/
-│   ├── index.ts              # Main MCP server implementation
-│   ├── salesforce-client.ts  # Salesforce API integration
-│   └── types.ts              # TypeScript types and Zod schemas
-├── dist/                     # Compiled JavaScript output
-├── package.json              # Project configuration
-├── tsconfig.json             # TypeScript configuration
-├── .eslintrc.json           # ESLint configuration
-├── .env.example             # Environment variables template
-├── test-mcp.js              # MCP server testing script
-└── README.md                # This documentation
+├── package.xml                    # Deployment manifest
+├── sfdx-project.json             # Salesforce DX project config
+├── force-app/main/default/       # Salesforce metadata
+│   ├── objects/ReturnOrder/fields/ # Custom fields
+│   └── flows/                     # Flow automation
+├── src/                          # MCP server source code
+│   ├── index.ts                  # Main server implementation
+│   ├── salesforce-client.ts     # Salesforce API integration
+│   └── types.ts                  # TypeScript types and schemas
+├── dist/                         # Compiled JavaScript
+└── test-*.js                     # Testing utilities
 ```
 
-## 🧪 Testing
+## 🌟 Benefits of Standard Objects
 
-### Type Check & Build
-```bash
-npm run typecheck    # Verify TypeScript types
-npm run build        # Compile to JavaScript
-npm run lint         # Check code style
-```
+- **Native Salesforce Support** - Official support and automatic updates
+- **Better Performance** - Optimized for large data volumes  
+- **Standard Integration** - Works with other Salesforce products
+- **Mobile Ready** - Native mobile app support
+- **Future Proof** - Automatic platform updates
+- **Reporting** - Built-in analytics and standard reports
 
-### MCP Server Test
-```bash
-node test-mcp.js     # Test MCP protocol communication
-```
+## 📄 License
 
-### Manual Testing
-```bash
-npm start            # Start server directly
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📊 Salesforce Object Model
+## 🤝 Contributing
 
-The server expects these Salesforce objects:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-### Standard Objects
-- **Order**: Standard Salesforce Order object with shipping fields
-- **OrderItem**: Line items with Product2 references
+## 📞 Support
 
-### Custom Objects (Expected)
-- **Return__c**: Custom object for RMA tracking
-  - `OrderId__c`: Reference to original order
-  - `OrderItemId__c`: Reference to returned line item
-  - `ProductId__c`: Product being returned
-  - `Quantity__c`: Return quantity
-  - `Reason__c`: Return reason
-  - `Status__c`: Return status
-  - `RequestDate__c`: When return was requested
-
-### Required Fields
-Orders should have:
-- `ShippingCarrier__c` (custom field)
-- `TrackingNumber__c` (custom field)  
-- `EstimatedDeliveryDate__c` (custom field)
-- Standard shipping address fields
-
-## 🔧 Development
-
-### Available Scripts
-- `npm run build` - Compile TypeScript
-- `npm run dev` - Watch mode development
-- `npm start` - Start production server
-- `npm run typecheck` - Type checking only
-- `npm run lint` - Code linting
-
-### Adding New Tools
-1. Define tool schema in `src/index.ts` ListToolsRequestSchema handler
-2. Add implementation in CallToolRequestSchema handler
-3. Update Salesforce client methods in `src/salesforce-client.ts`
-4. Add types/validation in `src/types.ts`
-
-## 🛡 Security Notes
-
-- Credentials are passed via environment variables
-- No sensitive data is logged or exposed in responses
-- Authentication errors are handled gracefully
-- All inputs are validated using Zod schemas
-
-## 🔗 Resources
-
-- [MCP Documentation](https://modelcontextprotocol.io/)
-- [JSForce Library](https://jsforce.github.io/)
-- [Salesforce Object Reference](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/)
-- [Claude Desktop MCP Integration](https://docs.anthropic.com/en/docs/claude-code/mcp)
-
-## 📝 Status
-
-✅ **Completed Features:**
-- MCP server implementation
-- All three core tools (status, returns, email)
-- Salesforce integration via jsforce
-- Claude Desktop configuration
-- TypeScript compilation and validation
-- Error handling and input validation
-
-🔄 **Next Steps:**
-- Test with real Salesforce data
-- Add more sophisticated return workflows
-- Implement order modification capabilities
-- Add customer notification features
-
-## 🐛 Troubleshooting
-
-**Common Issues:**
-
-1. **"Cannot find namespace 'jsforce'"**
-   - Fixed: Using `import * as jsforce` syntax
-   - Ensure `@types/jsforce` is installed
-
-2. **"No username password given"**
-   - Check `.env` file configuration
-   - Verify Salesforce credentials
-
-3. **MCP server not appearing in Claude Desktop**
-   - Restart Claude Desktop after configuration changes
-   - Check file paths in `claude_desktop_config.json`
-
-4. **Salesforce connection errors**
-   - Verify security token is current
-   - Check IP restrictions in Salesforce org
-   - Ensure user has appropriate permissions
+For issues related to:
+- **Salesforce deployment**: Check Salesforce documentation for ReturnOrder
+- **MCP server integration**: Review server logs and configuration  
+- **Custom business logic**: Modify flows and validation rules as needed
 
 ---
 
-Built with ❤️ for seamless Salesforce integration
+**Note**: This implementation uses Salesforce standard objects (ReturnOrder/ReturnOrderLineItem) instead of custom objects, providing better long-term maintainability and platform integration.

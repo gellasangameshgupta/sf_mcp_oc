@@ -1,4 +1,4 @@
-import { SalesforceConfig, OrderStatus, ReturnRequest } from './types.js';
+import { SalesforceConfig, OrderStatus, ReturnRequest, CaseStatusUpdate, SlackAlert } from './types.js';
 export declare class SalesforceClient {
     private conn;
     private config;
@@ -6,6 +6,12 @@ export declare class SalesforceClient {
     connect(): Promise<void>;
     getOrderStatus(orderId: string): Promise<OrderStatus>;
     createReturn(returnRequest: ReturnRequest): Promise<string>;
-    emailReturnLabel(returnId: string, customerEmail: string): Promise<boolean>;
+    emailReturnLabel(returnOrderId: string, customerEmail: string): Promise<boolean>;
+    updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean>;
+    createCaseFromReturn(returnOrderId: string): Promise<string>;
+    sendSlackAlert(alert: SlackAlert): Promise<boolean>;
+    private isValidStatusTransition;
+    private getSlackIconByPriority;
+    private getSlackColorByPriority;
 }
 //# sourceMappingURL=salesforce-client.d.ts.map

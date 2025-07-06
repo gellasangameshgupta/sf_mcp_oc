@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
 import { createServer } from 'http';
 import { SalesforceClient } from './salesforce-client.js';
-import { ReturnRequestSchema, ReturnLabelRequestSchema } from './types.js';
+import { ReturnRequestSchema, ReturnLabelRequestSchema, CaseStatusUpdateSchema, SlackAlertSchema } from './types.js';
 class OrderConciergeServer {
     server;
     salesforceClient;
@@ -24,6 +24,8 @@ class OrderConciergeServer {
             securityToken: process.env.SF_SECURITY_TOKEN,
             clientId: process.env.SF_CLIENT_ID,
             clientSecret: process.env.SF_CLIENT_SECRET,
+            slackWebhookUrl: process.env.SLACK_WEBHOOK_URL,
+            slackDefaultChannel: process.env.SLACK_DEFAULT_CHANNEL,
         };
         this.salesforceClient = new SalesforceClient(config);
         this.setupToolHandlers();
@@ -48,7 +50,7 @@ class OrderConciergeServer {
                     },
                     {
                         name: 'create_return',
-                        description: 'Create a return (RMA) for a single line item in an order',
+                        description: 'Create a return order for a single line item in an order using standard Salesforce objects',
                         inputSchema: {
                             type: 'object',
                             properties: {
@@ -62,12 +64,17 @@ class OrderConciergeServer {
                                 },
                                 reason: {
                                     type: 'string',
+                                    enum: ['Defective', 'Damaged', 'Wrong Item', 'Not Needed', 'Quality Issue', 'Size/Color', 'Other'],
                                     description: 'Reason for the return'
                                 },
                                 quantity: {
                                     type: 'number',
                                     description: 'Quantity to return',
                                     minimum: 1
+                                },
+                                description: {
+                                    type: 'string',
+                                    description: 'Optional additional description for the return'
                                 }
                             },
                             required: ['orderId', 'lineItemId', 'reason', 'quantity']
@@ -75,20 +82,93 @@ class OrderConciergeServer {
                     },
                     {
                         name: 'email_return_label',
-                        description: 'Email the customer a PDF return label that has already been generated',
+                        description: 'Email the customer a PDF return label for an approved return order',
                         inputSchema: {
                             type: 'object',
                             properties: {
-                                returnId: {
+                                returnOrderId: {
                                     type: 'string',
-                                    description: 'The return ID for which to send the label'
+                                    description: 'The return order ID for which to send the label'
                                 },
                                 customerEmail: {
                                     type: 'string',
                                     description: 'Customer email address to send the label to'
                                 }
                             },
-                            required: ['returnId', 'customerEmail']
+                            required: ['returnOrderId', 'customerEmail']
+                        }
+                    },
+                    {
+                        name: 'update_case_status',
+                        description: 'Update a case status with optional priority and assignment changes',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                caseId: {
+                                    type: 'string',
+                                    description: 'The case ID to update'
+                                },
+                                status: {
+                                    type: 'string',
+                                    enum: ['New', 'Working', 'Escalated', 'Closed'],
+                                    description: 'New case status'
+                                },
+                                reason: {
+                                    type: 'string',
+                                    description: 'Reason for status change (optional)'
+                                },
+                                priority: {
+                                    type: 'string',
+                                    enum: ['Low', 'Medium', 'High', 'Critical'],
+                                    description: 'Case priority (optional)'
+                                },
+                                assignedTo: {
+                                    type: 'string',
+                                    description: 'User ID or username to assign case to (optional)'
+                                }
+                            },
+                            required: ['caseId', 'status']
+                        }
+                    },
+                    {
+                        name: 'create_case_from_return',
+                        description: 'Create a case from an existing return order for tracking and follow-up',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                returnOrderId: {
+                                    type: 'string',
+                                    description: 'The return order ID to create a case from'
+                                }
+                            },
+                            required: ['returnOrderId']
+                        }
+                    },
+                    {
+                        name: 'send_slack_alert',
+                        description: 'Send a Slack alert notification',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                message: {
+                                    type: 'string',
+                                    description: 'The alert message to send'
+                                },
+                                channel: {
+                                    type: 'string',
+                                    description: 'Slack channel to send to (optional, uses default if not provided)'
+                                },
+                                priority: {
+                                    type: 'string',
+                                    enum: ['info', 'warning', 'error', 'critical'],
+                                    description: 'Alert priority level (optional, defaults to info)'
+                                },
+                                caseId: {
+                                    type: 'string',
+                                    description: 'Related case ID (optional)'
+                                }
+                            },
+                            required: ['message']
                         }
                     }
                 ]
@@ -127,24 +207,62 @@ class OrderConciergeServer {
                     }
                     case 'create_return': {
                         const parsed = ReturnRequestSchema.parse(args);
-                        const returnId = await this.salesforceClient.createReturn(parsed);
+                        const returnOrderId = await this.salesforceClient.createReturn(parsed);
                         return {
                             content: [
                                 {
                                     type: 'text',
-                                    text: `Return created successfully with ID: ${returnId}. The return request has been submitted and will be processed within 1-2 business days.`
+                                    text: `Return order created successfully with ID: ${returnOrderId}. The return request has been submitted and will be processed within 1-2 business days.`
                                 }
                             ]
                         };
                     }
                     case 'email_return_label': {
                         const parsed = ReturnLabelRequestSchema.parse(args);
-                        await this.salesforceClient.emailReturnLabel(parsed.returnId, parsed.customerEmail);
+                        await this.salesforceClient.emailReturnLabel(parsed.returnOrderId, parsed.customerEmail);
                         return {
                             content: [
                                 {
                                     type: 'text',
                                     text: `Return label has been emailed to ${parsed.customerEmail}. Please check your inbox (and spam folder) for the return shipping label.`
+                                }
+                            ]
+                        };
+                    }
+                    case 'update_case_status': {
+                        const parsed = CaseStatusUpdateSchema.parse(args);
+                        await this.salesforceClient.updateCaseStatus(parsed);
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: `Case ${parsed.caseId} status updated to ${parsed.status} successfully.`
+                                }
+                            ]
+                        };
+                    }
+                    case 'create_case_from_return': {
+                        const { returnOrderId } = args;
+                        const caseId = await this.salesforceClient.createCaseFromReturn(returnOrderId);
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: `Case created successfully with ID: ${caseId}. The case has been created from return order ${returnOrderId} and a Slack notification has been sent.`
+                                }
+                            ]
+                        };
+                    }
+                    case 'send_slack_alert': {
+                        const parsed = SlackAlertSchema.parse(args);
+                        const success = await this.salesforceClient.sendSlackAlert(parsed);
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: success
+                                        ? `Slack alert sent successfully to ${parsed.channel || 'default channel'}.`
+                                        : `Failed to send Slack alert. Please check the configuration and try again.`
                                 }
                             ]
                         };
@@ -155,8 +273,24 @@ class OrderConciergeServer {
             }
             catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
+                // Handle different types of errors with appropriate error codes
                 if (errorMessage.includes('not found')) {
                     throw new McpError(ErrorCode.InvalidRequest, errorMessage);
+                }
+                if (errorMessage.includes('Invalid') || errorMessage.includes('required')) {
+                    throw new McpError(ErrorCode.InvalidParams, errorMessage);
+                }
+                if (errorMessage.includes('already exists') || errorMessage.includes('Cannot reopen')) {
+                    throw new McpError(ErrorCode.InvalidRequest, errorMessage);
+                }
+                if (errorMessage.includes('transition') || errorMessage.includes('status')) {
+                    throw new McpError(ErrorCode.InvalidRequest, errorMessage);
+                }
+                if (errorMessage.includes('Slack') || errorMessage.includes('webhook')) {
+                    throw new McpError(ErrorCode.InternalError, `External service error: ${errorMessage}`);
+                }
+                if (errorMessage.includes('connect') || errorMessage.includes('login')) {
+                    throw new McpError(ErrorCode.InternalError, `Salesforce connection error: ${errorMessage}`);
                 }
                 throw new McpError(ErrorCode.InternalError, `Tool execution failed: ${errorMessage}`);
             }
@@ -256,22 +390,59 @@ class OrderConciergeServer {
                                 }
                                 case 'create_return': {
                                     const parsed = ReturnRequestSchema.parse(args);
-                                    const returnId = await this.salesforceClient.createReturn(parsed);
+                                    const returnOrderId = await this.salesforceClient.createReturn(parsed);
                                     result = {
                                         content: [{
                                                 type: 'text',
-                                                text: `Return created successfully with ID: ${returnId}. The return request has been submitted and will be processed within 1-2 business days.`
+                                                text: `Return order created successfully with ID: ${returnOrderId}. The return request has been submitted and will be processed within 1-2 business days.`
                                             }]
                                     };
                                     break;
                                 }
                                 case 'email_return_label': {
                                     const parsed = ReturnLabelRequestSchema.parse(args);
-                                    await this.salesforceClient.emailReturnLabel(parsed.returnId, parsed.customerEmail);
+                                    await this.salesforceClient.emailReturnLabel(parsed.returnOrderId, parsed.customerEmail);
                                     result = {
                                         content: [{
                                                 type: 'text',
                                                 text: `Return label has been emailed to ${parsed.customerEmail}. Please check your inbox (and spam folder) for the return shipping label.`
+                                            }]
+                                    };
+                                    break;
+                                }
+                                case 'update_case_status': {
+                                    const parsed = CaseStatusUpdateSchema.parse(args);
+                                    await this.salesforceClient.updateCaseStatus(parsed);
+                                    result = {
+                                        content: [{
+                                                type: 'text',
+                                                text: `Case ${parsed.caseId} status updated to ${parsed.status} successfully.`
+                                            }]
+                                    };
+                                    break;
+                                }
+                                case 'create_case_from_return': {
+                                    if (!args.returnOrderId) {
+                                        throw new Error('returnOrderId is required');
+                                    }
+                                    const caseId = await this.salesforceClient.createCaseFromReturn(args.returnOrderId);
+                                    result = {
+                                        content: [{
+                                                type: 'text',
+                                                text: `Case created successfully with ID: ${caseId}. The case has been created from return order ${args.returnOrderId} and a Slack notification has been sent.`
+                                            }]
+                                    };
+                                    break;
+                                }
+                                case 'send_slack_alert': {
+                                    const parsed = SlackAlertSchema.parse(args);
+                                    const success = await this.salesforceClient.sendSlackAlert(parsed);
+                                    result = {
+                                        content: [{
+                                                type: 'text',
+                                                text: success
+                                                    ? `Slack alert sent successfully to ${parsed.channel || 'default channel'}.`
+                                                    : `Failed to send Slack alert. Please check the configuration and try again.`
                                             }]
                                     };
                                     break;
@@ -287,10 +458,35 @@ class OrderConciergeServer {
                         }
                         catch (error) {
                             const errorMessage = error instanceof Error ? error.message : String(error);
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            // Determine appropriate HTTP status code based on error type
+                            let statusCode = 500;
+                            let errorType = 'Internal Server Error';
+                            if (errorMessage.includes('not found')) {
+                                statusCode = 404;
+                                errorType = 'Not Found';
+                            }
+                            else if (errorMessage.includes('Invalid') || errorMessage.includes('required')) {
+                                statusCode = 400;
+                                errorType = 'Bad Request';
+                            }
+                            else if (errorMessage.includes('already exists') || errorMessage.includes('Cannot reopen')) {
+                                statusCode = 409;
+                                errorType = 'Conflict';
+                            }
+                            else if (errorMessage.includes('transition') || errorMessage.includes('status')) {
+                                statusCode = 422;
+                                errorType = 'Unprocessable Entity';
+                            }
+                            else if (errorMessage.includes('connect') || errorMessage.includes('login')) {
+                                statusCode = 503;
+                                errorType = 'Service Unavailable';
+                            }
+                            res.writeHead(statusCode, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 success: false,
-                                error: errorMessage
+                                error: errorType,
+                                message: errorMessage,
+                                timestamp: new Date().toISOString()
                             }));
                         }
                     });

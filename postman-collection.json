@@ -1,8 +1,9 @@
 {
   "info": {
     "name": "Salesforce Order Concierge MCP",
-    "description": "Test collection for Railway MCP server",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Test collection for Salesforce Order Concierge MCP server with standard ReturnOrder objects",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
   },
   "item": [
     {
@@ -48,7 +49,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"check_order_status\",\n  \"arguments\": {\n    \"orderId\": \"00000123\"\n  }\n}"
+          "raw": "{\n  \"name\": \"check_order_status\",\n  \"arguments\": {\n    \"orderId\": \"801xx0000000001\"\n  }\n}"
         },
         "url": {
           "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
@@ -70,7 +71,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"orderId\": \"00000123\",\n    \"lineItemId\": \"00k000000123456\",\n    \"reason\": \"Product defective\",\n    \"quantity\": 1\n  }\n}"
+          "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"orderId\": \"801xx0000000001\",\n    \"lineItemId\": \"802xx0000000001\",\n    \"reason\": \"Defective\",\n    \"quantity\": 1,\n    \"description\": \"Product stopped working after 2 days\"\n  }\n}"
         },
         "url": {
           "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
@@ -92,7 +93,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"email_return_label\",\n  \"arguments\": {\n    \"returnId\": \"a0X000000123456\",\n    \"customerEmail\": \"customer@example.com\"\n  }\n}"
+          "raw": "{\n  \"name\": \"email_return_label\",\n  \"arguments\": {\n    \"returnOrderId\": \"0OR5x0000000001\",\n    \"customerEmail\": \"customer@example.com\"\n  }\n}"
         },
         "url": {
           "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
@@ -101,6 +102,84 @@
           "path": ["mcp", "tools", "call"]
         }
       }
+    },
+    {
+      "name": "Update Case Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"update_case_status\",\n  \"arguments\": {\n    \"caseId\": \"500xx0000000001\",\n    \"status\": \"Working\",\n    \"reason\": \"Investigating return request\",\n    \"priority\": \"High\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    },
+    {
+      "name": "Create Case from Return",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"create_case_from_return\",\n  \"arguments\": {\n    \"returnOrderId\": \"0OR5x0000000001\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    },
+    {
+      "name": "Send Slack Alert",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"send_slack_alert\",\n  \"arguments\": {\n    \"message\": \"High priority case requires attention\",\n    \"channel\": \"#returns\",\n    \"priority\": \"high\",\n    \"caseId\": \"500xx0000000001\",\n    \"customFields\": {\n      \"returnOrderId\": \"0OR5x0000000001\",\n      \"customerEmail\": \"customer@example.com\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
+          "protocol": "https",
+          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "path": ["mcp", "tools", "call"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://sfmcpoc-production.up.railway.app",
+      "type": "string"
+    },
+    {
+      "key": "localUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
     }
   ]
 }
