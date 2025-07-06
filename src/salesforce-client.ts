@@ -378,7 +378,7 @@ export class SalesforceClient {
       // Get return order details with line items
       const returnQuery = `
         SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
-               (SELECT Id, Product2Id, Product2.Name, QuantityReturned, ReasonCode, Description 
+               (SELECT Id, Product2Id, Product2.Name, QuantityReturned, Description 
                 FROM ReturnOrderLineItems)
         FROM ReturnOrder 
         WHERE Id = '${returnOrderId}'
