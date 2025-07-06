@@ -150,6 +150,8 @@ export class SalesforceClient {
         Status: 'Submitted'
       });
 
+      this.createCaseFromReturn(returnOrderResult.id);
+      
       return returnOrderResult.id;
     } catch (error) {
       throw new Error(`Failed to create return: ${error}`);
@@ -363,7 +365,7 @@ export class SalesforceClient {
     }
   }
 
-  async createCaseFromReturn(returnOrderId: string): Promise<string> {
+  private createCaseFromReturn(returnOrderId: string): Promise<string> {
     try {
       // Input validation
       if (!returnOrderId || typeof returnOrderId !== 'string') {

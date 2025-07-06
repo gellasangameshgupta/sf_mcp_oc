@@ -480,20 +480,20 @@ class OrderConciergeServer {
                   break;
                 }
 
-                case 'create_case_from_return': {
-                  if (!args.returnOrderId) {
-                    throw new Error('returnOrderId is required');
-                  }
-                  const caseId = await this.salesforceClient.createCaseFromReturn(args.returnOrderId);
+                //case 'create_case_from_return': {
+                  //if (!args.returnOrderId) {
+                    //throw new Error('returnOrderId is required');
+                  //}
+                  //const caseId = await this.salesforceClient.createCaseFromReturn(args.returnOrderId);
                   
-                  result = {
-                    content: [{
-                      type: 'text',
-                      text: `Case created successfully with ID: ${caseId}. The case has been created from return order ${args.returnOrderId} and a Slack notification has been sent.`
-                    }]
-                  };
-                  break;
-                }
+                  //result = {
+                    //content: [{
+                      //type: 'text',
+                      //text: `Case created successfully with ID: ${caseId}. The case has been created from return order ${args.returnOrderId} and a Slack notification has been sent.`
+                    //}]
+                  //};
+                  //break;
+                //}
 
                 case 'send_slack_alert': {
                   const parsed = SlackAlertSchema.parse(args);
