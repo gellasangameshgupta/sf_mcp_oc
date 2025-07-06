@@ -128,9 +128,6 @@ export class SalesforceClient {
                 Id: returnOrderResult.id,
                 Status: 'Submitted'
             });
-            const caseId = await this.createCaseFromReturn(returnOrderResult.id)
-                .then(caseId => console.log(`Case created from return order: ${caseId}`))
-                .catch(error => console.error(`Failed to create case from return order: ${error}`));
             return returnOrderResult.id;
         }
         catch (error) {
