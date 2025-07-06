@@ -172,7 +172,7 @@ export class SalesforceClient {
                 throw new Error(`Return label has already been sent on ${returnOrder.LabelEmailSentDate__c}. Cannot send duplicate labels.`);
             }
             const emailTemplate = {
-                targetObjectId: returnOrder.OrderId,
+                //targetObjectId: returnOrder.OrderId,
                 toAddresses: [customerEmail],
                 subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
                 htmlBody: `
