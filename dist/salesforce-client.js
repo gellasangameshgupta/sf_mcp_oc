@@ -114,10 +114,8 @@ export class SalesforceClient {
                 ReturnOrderId: returnOrderResult.id,
                 OrderItemId: returnRequest.lineItemId,
                 Product2Id: orderItem.Product2Id,
-                QuantityRejected: returnRequest.quantity,
-                UnitPrice: orderItem.UnitPrice,
-                ReasonCode: returnRequest.reason,
-                Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason}`
+                QuantityReturned: returnRequest.quantity,
+                Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason || 'No reason provided'}`,
             };
             const returnLineItemResult = await this.conn.sobject('ReturnOrderLineItem').create(returnLineItemRecord);
             if (!returnLineItemResult.success) {
