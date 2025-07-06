@@ -378,7 +378,7 @@ export class SalesforceClient {
       // Get return order details with line items
       const returnQuery = `
         SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
-               (SELECT Id, Product2Id, Product2.Name, QuantityToReturn, ReasonCode, Description 
+               (SELECT Id, Product2Id, Product2.Name, QuantityReturned, ReasonCode, Description 
                 FROM ReturnOrderLineItems)
         FROM ReturnOrder 
         WHERE Id = '${returnOrderId}'
@@ -431,7 +431,7 @@ export class SalesforceClient {
       if (returnOrder.ReturnOrderLineItems && returnOrder.ReturnOrderLineItems.records.length > 0) {
         caseDescription += `\nReturning Items:\n`;
         returnOrder.ReturnOrderLineItems.records.forEach((lineItem: any, index: number) => {
-          caseDescription += `${index + 1}. ${lineItem.Product2?.Name || 'Unknown Product'} (Qty: ${lineItem.QuantityToReturn}) - Reason: ${lineItem.ReasonCode}\n`;
+          caseDescription += `${index + 1}. ${lineItem.Product2?.Name || 'Unknown Product'} (Qty: ${lineItem.QuantityReturned}) - Reason: ${lineItem.ReasonCode}\n`;
         });
       }
 
@@ -447,8 +447,8 @@ export class SalesforceClient {
         Description: caseDescription,
         Status: 'New',
         Priority: priority,
-        Origin: 'Return Order',
-        Type: 'Return Request',
+        Origin: 'Web',
+        Type: 'Other',
         AccountId: order.AccountId
       };
 
@@ -472,7 +472,7 @@ export class SalesforceClient {
       // Send Slack alert for new case
       if (this.config.slackWebhookUrl) {
         const lineItemSummary = returnOrder.ReturnOrderLineItems?.records?.map((item: any) => 
-          `${item.Product2?.Name || 'Unknown'} (${item.QuantityToReturn})`
+          `${item.Product2?.Name || 'Unknown'} (${item.QuantityReturned})`
         ).join(', ') || 'No items';
 
         await this.sendSlackAlert({
