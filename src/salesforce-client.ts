@@ -528,8 +528,6 @@ export class SalesforceClient {
       const payload = {
         channel,
         text: alert.message,
-        username: 'Salesforce Order Concierge',
-        icon_emoji: this.getSlackIconByPriority(alert.priority),
         attachments: [
           {
             color: this.getSlackColorByPriority(alert.priority),

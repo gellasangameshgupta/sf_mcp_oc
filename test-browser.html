@@ -1,254 +1,330 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salesforce Order Concierge - Browser Test</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .input-group {
-            margin: 15px 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        button {
-            background: #007cba;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
-        }
-        button:hover {
-            background: #005a87;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            font-family: monospace;
-        }
-        .success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .loading {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Salesforce Order Concierge - Browser Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .input-group {
+      margin: 15px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    button {
+      background: #007cba;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #005a87;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .loading {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🛍️ Salesforce Order Concierge Test Interface</h1>
-        <p>Test your Railway MCP server with real Salesforce data</p>
+  <div class="container">
+    <h1>🛍️ Salesforce Order Concierge Test Interface</h1>
+    <p>Test your Railway MCP server with real Salesforce data</p>
 
-        <div class="input-group">
-            <label for="tool-select">Select Tool:</label>
-            <select id="tool-select" onchange="updateForm()">
-                <option value="check_order_status">Check Order Status</option>
-                <option value="create_return">Create Return</option>
-                <option value="email_return_label">Email Return Label</option>
-            </select>
-        </div>
-
-        <!-- Order Status Form -->
-        <div id="order-status-form">
-            <div class="input-group">
-                <label for="order-id">Order ID/Number:</label>
-                <input type="text" id="order-id" placeholder="Enter real Salesforce Order Number (e.g., 00000123)" />
-            </div>
-        </div>
-
-        <!-- Create Return Form -->
-        <div id="create-return-form" style="display: none;">
-            <div class="input-group">
-                <label for="return-order-id">Order ID:</label>
-                <input type="text" id="return-order-id" placeholder="Order ID" />
-            </div>
-            <div class="input-group">
-                <label for="line-item-id">Line Item ID:</label>
-                <input type="text" id="line-item-id" placeholder="OrderItem ID (e.g., 00k000000123456)" />
-            </div>
-            <div class="input-group">
-                <label for="return-reason">Return Reason:</label>
-                <input type="text" id="return-reason" placeholder="e.g., Product defective" />
-            </div>
-            <div class="input-group">
-                <label for="return-quantity">Quantity:</label>
-                <input type="number" id="return-quantity" value="1" min="1" />
-            </div>
-        </div>
-
-        <!-- Email Return Label Form -->
-        <div id="email-label-form" style="display: none;">
-            <div class="input-group">
-                <label for="return-id">Return ID:</label>
-                <input type="text" id="return-id" placeholder="Return Record ID (e.g., a0X000000123456)" />
-            </div>
-            <div class="input-group">
-                <label for="customer-email">Customer Email:</label>
-                <input type="email" id="customer-email" placeholder="customer@example.com" />
-            </div>
-        </div>
-
-        <div>
-            <button onclick="testTool()">🧪 Test Tool</button>
-            <button onclick="listTools()">📋 List All Tools</button>
-            <button onclick="healthCheck()">💚 Health Check</button>
-        </div>
-
-        <div id="result" class="result" style="display: none;"></div>
+    <div class="input-group">
+      <label for="tool-select">Select Tool:</label>
+      <select id="tool-select" onchange="updateForm()">
+        <option value="check_order_status">Check Order Status</option>
+        <option value="create_return">Create Return</option>
+        <option value="email_return_label">Email Return Label</option>
+        <option value="update_case_status">Update Case Status</option>
+        <option value="send_slack_alert">Send Slack Alert</option>
+      </select>
     </div>
 
-    <script>
-        const BASE_URL = 'https://sfmcpoc-production.up.railway.app';
+    <!-- Order Status Form -->
+    <div id="order-status-form">
+      <div class="input-group">
+        <label for="order-id">Order ID/Number:</label>
+        <input type="text" id="order-id"
+               placeholder="Enter Salesforce Order Id or Order Number"/>
+      </div>
+    </div>
 
-        function updateForm() {
-            const tool = document.getElementById('tool-select').value;
-            document.getElementById('order-status-form').style.display = tool === 'check_order_status' ? 'block' : 'none';
-            document.getElementById('create-return-form').style.display = tool === 'create_return' ? 'block' : 'none';
-            document.getElementById('email-label-form').style.display = tool === 'email_return_label' ? 'block' : 'none';
-        }
+    <!-- Create Return Form -->
+    <div id="create-return-form" style="display: none;">
+      <div class="input-group">
+        <label for="line-item-id">Order Item ID:</label>
+        <input type="text" id="line-item-id"
+               placeholder="OrderItem ID (e.g. 00k000000123456)" />
+      </div>
+      <div class="input-group">
+        <label for="return-quantity">Quantity to Return:</label>
+        <input type="number" id="return-quantity" value="1" min="1"/>
+      </div>
+      <div class="input-group">
+        <label for="return-reason">Return Reason:</label>
+        <input type="text" id="return-reason"
+               placeholder="e.g. Product defective" />
+      </div>
+    </div>
 
-        function showResult(content, type = 'success') {
-            const resultDiv = document.getElementById('result');
-            resultDiv.textContent = content;
-            resultDiv.className = `result ${type}`;
-            resultDiv.style.display = 'block';
-        }
+    <!-- Email Return Label Form -->
+    <div id="email-label-form" style="display: none;">
+      <div class="input-group">
+        <label for="return-id">Return Order ID:</label>
+        <input type="text" id="return-id"
+               placeholder="ReturnOrder ID (e.g. a0X000000123456)" />
+      </div>
+      <div class="input-group">
+        <label for="customer-email">Customer Email:</label>
+        <input type="email" id="customer-email"
+               placeholder="customer@example.com" />
+      </div>
+    </div>
 
-        async function healthCheck() {
-            showResult('Checking server health...', 'loading');
+    <!-- Update Case Status Form -->
+    <div id="update-case-form" style="display: none;">
+      <div class="input-group">
+        <label for="case-id">Case ID:</label>
+        <input type="text" id="case-id"
+               placeholder="Case ID (e.g. 50000000123456)" />
+      </div>
+      <div class="input-group">
+        <label for="case-status">New Status:</label>
+        <input type="text" id="case-status"
+               placeholder="e.g. Working, Closed" />
+      </div>
+      <div class="input-group">
+        <label for="case-priority">Priority (optional):</label>
+        <input type="text" id="case-priority"
+               placeholder="e.g. High, Medium" />
+      </div>
+      <div class="input-group">
+        <label for="case-assigned-to">Assigned To (optional):</label>
+        <input type="text" id="case-assigned-to"
+               placeholder="User ID or Username" />
+      </div>
+      <div class="input-group">
+        <label for="case-reason">Reason (optional):</label>
+        <textarea id="case-reason"
+                  placeholder="Reason for status change"></textarea>
+      </div>
+    </div>
+
+    <!-- Send Slack Alert Form -->
+    <div id="slack-alert-form" style="display: none;">
+      <div class="input-group">
+        <label for="slack-message">Slack Message:</label>
+        <textarea id="slack-message"
+                  placeholder="Your alert text here"></textarea>
+      </div>
+      <div class="input-group">
+        <label for="slack-priority">Priority:</label>
+        <select id="slack-priority">
+          <option value="info">info</option>
+          <option value="warning">warning</option>
+          <option value="error">error</option>
+          <option value="critical">critical</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="slack-channel">Channel (optional):</label>
+        <input type="text" id="slack-channel"
+               placeholder="#channel or @user"/>
+      </div>
+      <div class="input-group">
+        <label for="slack-case-id">Case ID (optional):</label>
+        <input type="text" id="slack-case-id"
+               placeholder="e.g. 50000000123456"/>
+      </div>
+      <div class="input-group">
+        <label for="slack-custom-fields">Custom Fields (JSON, optional):</label>
+        <textarea id="slack-custom-fields"
+                  placeholder='{"orderNumber":"000123", "items":"Widget (2)"}'></textarea>
+      </div>
+    </div>
+
+    <div>
+      <button onclick="testTool()">🧪 Test Tool</button>
+      <button onclick="listTools()">📋 List All Tools</button>
+      <button onclick="healthCheck()">💚 Health Check</button>
+    </div>
+
+    <div id="result" class="result" style="display: none;"></div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://sfmcpoc-production.up.railway.app';
+
+    function updateForm() {
+      const tool = document.getElementById('tool-select').value;
+      document.getElementById('order-status-form').style.display = tool === 'check_order_status' ? 'block' : 'none';
+      document.getElementById('create-return-form').style.display = tool === 'create_return' ? 'block' : 'none';
+      document.getElementById('email-label-form').style.display = tool === 'email_return_label' ? 'block' : 'none';
+      document.getElementById('update-case-form').style.display = tool === 'update_case_status' ? 'block' : 'none';
+      document.getElementById('slack-alert-form').style.display = tool === 'send_slack_alert' ? 'block' : 'none';
+    }
+
+    function showResult(content, type = 'success') {
+      const r = document.getElementById('result');
+      r.textContent = content;
+      r.className = `result ${type}`;
+      r.style.display = 'block';
+    }
+
+    async function healthCheck() {
+      showResult('Checking server health...', 'loading');
+      try {
+        const res = await fetch(`${BASE_URL}/health`);
+        const json = await res.json();
+        showResult(`✅ Server is healthy!\n\n${JSON.stringify(json,null,2)}`, 'success');
+      } catch (err) {
+        showResult(`❌ Health check failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function listTools() {
+      showResult('Fetching available tools...', 'loading');
+      try {
+        const res = await fetch(`${BASE_URL}/mcp/tools/list`, {
+          method: 'POST', headers: {'Content-Type':'application/json'}
+        });
+        const data = await res.json();
+        let out = '✅ Available MCP Tools:\n\n';
+        if (data.tools) {
+          data.tools.forEach((t,i) => {
+            out += `${i+1}. ${t.name}\n   ${t.description}\n\n`;
+          });
+        } else out += JSON.stringify(data,null,2);
+        showResult(out,'success');
+      } catch (err) {
+        showResult(`❌ Failed to list tools: ${err.message}`,'error');
+      }
+    }
+
+    async function testTool() {
+      const tool = document.getElementById('tool-select').value;
+      let args = {};
+
+      switch (tool) {
+        case 'check_order_status':
+          args.orderId = document.getElementById('order-id').value.trim();
+          if (!args.orderId) return showResult('❌ Please enter an Order ID/Number','error');
+          break;
+
+        case 'create_return':
+          args.lineItemId = document.getElementById('line-item-id').value.trim();
+          args.quantity   = parseInt(document.getElementById('return-quantity').value,10);
+          args.reason     = document.getElementById('return-reason').value.trim();
+          if (!args.lineItemId) return showResult('❌ Please enter a Line Item ID','error');
+          if (!args.quantity||args.quantity<1) return showResult('❌ Quantity must be ≥1','error');
+          break;
+
+        case 'email_return_label':
+          args.returnOrderId = document.getElementById('return-id').value.trim();
+          args.customerEmail = document.getElementById('customer-email').value.trim();
+          if (!args.returnOrderId||!args.customerEmail)
+            return showResult('❌ Fill in Return Order ID and Customer Email','error');
+          break;
+
+        case 'update_case_status':
+          args.caseId = document.getElementById('case-id').value.trim();
+          args.status = document.getElementById('case-status').value.trim();
+          const prio    = document.getElementById('case-priority').value.trim();
+          const asgn    = document.getElementById('case-assigned-to').value.trim();
+          const reasonT = document.getElementById('case-reason').value.trim();
+          if (!args.caseId||!args.status)
+            return showResult('❌ Case ID and New Status are required','error');
+          if (prio)    args.priority   = prio;
+          if (asgn)    args.assignedTo = asgn;
+          if (reasonT) args.reason     = reasonT;
+          break;
+
+        case 'send_slack_alert':
+          args.message  = document.getElementById('slack-message').value.trim();
+          args.priority = document.getElementById('slack-priority').value;
+          const chan     = document.getElementById('slack-channel').value.trim();
+          const cId      = document.getElementById('slack-case-id').value.trim();
+          const cfText   = document.getElementById('slack-custom-fields').value.trim();
+          if (!args.message) return showResult('❌ Slack message text is required','error');
+          if (chan) args.channel = chan;
+          if (cId)  args.caseId  = cId;
+          if (cfText) {
             try {
-                const response = await fetch(`${BASE_URL}/health`);
-                const data = await response.json();
-                showResult(`✅ Server is healthy!\n\n${JSON.stringify(data, null, 2)}`, 'success');
-            } catch (error) {
-                showResult(`❌ Health check failed: ${error.message}`, 'error');
+              args.customFields = JSON.parse(cfText);
+            } catch(e) {
+              return showResult('❌ Invalid JSON in Custom Fields','error');
             }
+          }
+          break;
+      }
+
+      showResult(`🔄 Calling ${tool}…`,'loading');
+      try {
+        const res  = await fetch(`${BASE_URL}/mcp/tools/call`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ name: tool, arguments: args })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const txt = data.result.content[0].text;
+          showResult(`✅ Success!\n\n${txt}`,'success');
+        } else {
+          showResult(`❌ Tool execution failed:\n\n${data.error}`,'error');
         }
+      } catch(err) {
+        showResult(`❌ Request failed: ${err.message}`,'error');
+      }
+    }
 
-        async function listTools() {
-            showResult('Fetching available tools...', 'loading');
-            try {
-                const response = await fetch(`${BASE_URL}/mcp/tools/list`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                
-                let output = '✅ Available MCP Tools:\n\n';
-                if (data.tools) {
-                    data.tools.forEach((tool, i) => {
-                        output += `${i + 1}. ${tool.name}\n   ${tool.description}\n\n`;
-                    });
-                } else {
-                    output += JSON.stringify(data, null, 2);
-                }
-                
-                showResult(output, 'success');
-            } catch (error) {
-                showResult(`❌ Failed to list tools: ${error.message}`, 'error');
-            }
-        }
-
-        async function testTool() {
-            const tool = document.getElementById('tool-select').value;
-            let arguments = {};
-
-            // Build arguments based on selected tool
-            switch (tool) {
-                case 'check_order_status':
-                    arguments.orderId = document.getElementById('order-id').value;
-                    if (!arguments.orderId) {
-                        showResult('❌ Please enter an Order ID', 'error');
-                        return;
-                    }
-                    break;
-                case 'create_return':
-                    arguments = {
-                        orderId: document.getElementById('return-order-id').value,
-                        lineItemId: document.getElementById('line-item-id').value,
-                        reason: document.getElementById('return-reason').value,
-                        quantity: parseInt(document.getElementById('return-quantity').value)
-                    };
-                    if (!arguments.orderId || !arguments.lineItemId || !arguments.reason) {
-                        showResult('❌ Please fill in all required fields', 'error');
-                        return;
-                    }
-                    break;
-                case 'email_return_label':
-                    arguments = {
-                        returnId: document.getElementById('return-id').value,
-                        customerEmail: document.getElementById('customer-email').value
-                    };
-                    if (!arguments.returnId || !arguments.customerEmail) {
-                        showResult('❌ Please fill in all required fields', 'error');
-                        return;
-                    }
-                    break;
-            }
-
-            showResult(`🔄 Calling ${tool} with real Salesforce data...`, 'loading');
-
-            try {
-                const response = await fetch(`${BASE_URL}/mcp/tools/call`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: tool,
-                        arguments: arguments
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    const resultText = data.result.content[0].text;
-                    showResult(`✅ Success!\n\n${resultText}`, 'success');
-                } else {
-                    showResult(`❌ Tool execution failed:\n\n${data.error}`, 'error');
-                }
-            } catch (error) {
-                showResult(`❌ Request failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Initialize form
-        updateForm();
-    </script>
+    // initialize
+    updateForm();
+  </script>
 </body>
 </html>
