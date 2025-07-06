@@ -254,115 +254,6 @@ export class SalesforceClient {
     }
   }
 
-  async updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean> {
-    try {
-      // Input validation
-      if (!caseUpdate.caseId || typeof caseUpdate.caseId !== 'string') {
-        throw new Error('Case ID is required and must be a string');
-      }
-
-      if (!caseUpdate.status || typeof caseUpdate.status !== 'string') {
-        throw new Error('Status is required and must be a string');
-      }
-
-      // Validate case ID format (Salesforce ID format)
-      if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(caseUpdate.caseId)) {
-        throw new Error('Invalid case ID format. Must be a valid Salesforce ID (15 or 18 characters)');
-      }
-
-      // First, validate the case exists and get current status
-      const caseQuery = `
-        SELECT Id, CaseNumber, Status, Priority, OwnerId, Subject, Description, IsClosed
-        FROM Case 
-        WHERE Id = '${caseUpdate.caseId}'
-        LIMIT 1
-      `;
-
-      const queryResult = await this.conn.query(caseQuery);
-      
-      if (queryResult.records.length === 0) {
-        throw new Error(`Case ${caseUpdate.caseId} not found`);
-      }
-
-      const currentCase = queryResult.records[0] as any;
-      const previousStatus = currentCase.Status;
-
-      // Business rule validations
-      if (currentCase.IsClosed && caseUpdate.status !== 'Closed') {
-        throw new Error('Cannot reopen a closed case. Please create a new case instead.');
-      }
-
-      if (previousStatus === caseUpdate.status) {
-        throw new Error(`Case is already in ${caseUpdate.status} status. No update needed.`);
-      }
-
-      // Validate status transition rules
-      if (!this.isValidStatusTransition(previousStatus, caseUpdate.status)) {
-        throw new Error(`Invalid status transition from ${previousStatus} to ${caseUpdate.status}`);
-      }
-
-      // Build update record
-      const updateRecord: any = {
-        Id: caseUpdate.caseId,
-        Status: caseUpdate.status
-      };
-
-      if (caseUpdate.priority) {
-        updateRecord.Priority = caseUpdate.priority;
-      }
-
-      if (caseUpdate.assignedTo) {
-        // Validate user exists
-        const userQuery = `SELECT Id FROM User WHERE Id = '${caseUpdate.assignedTo}' OR Username = '${caseUpdate.assignedTo}' LIMIT 1`;
-        const userResult = await this.conn.query(userQuery);
-        
-        if (userResult.records.length === 0) {
-          throw new Error(`User ${caseUpdate.assignedTo} not found`);
-        }
-        
-        updateRecord.OwnerId = userResult.records[0].Id;
-      }
-
-      // Update the case
-      const updateResult = await this.conn.sobject('Case').update(updateRecord);
-      
-      // Handle JSForce update result
-      const updateResponse = Array.isArray(updateResult) ? updateResult[0] : updateResult;
-      if (!(updateResponse as any).success) {
-        throw new Error(`Failed to update case: ${(updateResponse as any).errors?.[0]?.message || 'Unknown error'}`);
-      }
-
-      // Create case history record for audit trail
-      if (caseUpdate.reason) {
-        await this.conn.sobject('CaseComment').create({
-          ParentId: caseUpdate.caseId,
-          CommentBody: `Status changed from ${previousStatus} to ${caseUpdate.status}. Reason: ${caseUpdate.reason}`,
-          IsPublished: true
-        });
-      }
-
-      // Send Slack alert for status change
-      if (this.config.slackWebhookUrl) {
-        await this.sendSlackAlert({
-          message: `Case ${currentCase.CaseNumber} status updated from ${previousStatus} to ${caseUpdate.status}`,
-          priority: caseUpdate.status === 'Escalated' ? 'warning' : 'info',
-          caseId: caseUpdate.caseId,
-          customFields: {
-            caseNumber: currentCase.CaseNumber,
-            subject: currentCase.Subject,
-            previousStatus,
-            newStatus: caseUpdate.status,
-            reason: caseUpdate.reason
-          }
-        });
-      }
-
-      return true;
-    } catch (error) {
-      throw new Error(`Failed to update case status: ${error}`);
-    }
-  }
-
   async createCaseFromReturn(returnOrderId: string): Promise<string> {
     try {
       // Input validation
@@ -494,6 +385,115 @@ export class SalesforceClient {
       return caseResult.id;
     } catch (error) {
       throw new Error(`Failed to create case from return order: ${error}`);
+    }
+  }
+
+  async updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean> {
+    try {
+      // Input validation
+      if (!caseUpdate.caseId || typeof caseUpdate.caseId !== 'string') {
+        throw new Error('Case ID is required and must be a string');
+      }
+
+      if (!caseUpdate.status || typeof caseUpdate.status !== 'string') {
+        throw new Error('Status is required and must be a string');
+      }
+
+      // Validate case ID format (Salesforce ID format)
+      if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(caseUpdate.caseId)) {
+        throw new Error('Invalid case ID format. Must be a valid Salesforce ID (15 or 18 characters)');
+      }
+
+      // First, validate the case exists and get current status
+      const caseQuery = `
+        SELECT Id, CaseNumber, Status, Priority, OwnerId, Subject, Description, IsClosed
+        FROM Case 
+        WHERE Id = '${caseUpdate.caseId}'
+        LIMIT 1
+      `;
+
+      const queryResult = await this.conn.query(caseQuery);
+      
+      if (queryResult.records.length === 0) {
+        throw new Error(`Case ${caseUpdate.caseId} not found`);
+      }
+
+      const currentCase = queryResult.records[0] as any;
+      const previousStatus = currentCase.Status;
+
+      // Business rule validations
+      if (currentCase.IsClosed && caseUpdate.status !== 'Closed') {
+        throw new Error('Cannot reopen a closed case. Please create a new case instead.');
+      }
+
+      if (previousStatus === caseUpdate.status) {
+        throw new Error(`Case is already in ${caseUpdate.status} status. No update needed.`);
+      }
+
+      // Validate status transition rules
+      if (!this.isValidStatusTransition(previousStatus, caseUpdate.status)) {
+        throw new Error(`Invalid status transition from ${previousStatus} to ${caseUpdate.status}`);
+      }
+
+      // Build update record
+      const updateRecord: any = {
+        Id: caseUpdate.caseId,
+        Status: caseUpdate.status
+      };
+
+      if (caseUpdate.priority) {
+        updateRecord.Priority = caseUpdate.priority;
+      }
+
+      if (caseUpdate.assignedTo) {
+        // Validate user exists
+        const userQuery = `SELECT Id FROM User WHERE Id = '${caseUpdate.assignedTo}' OR Username = '${caseUpdate.assignedTo}' LIMIT 1`;
+        const userResult = await this.conn.query(userQuery);
+        
+        if (userResult.records.length === 0) {
+          throw new Error(`User ${caseUpdate.assignedTo} not found`);
+        }
+        
+        updateRecord.OwnerId = userResult.records[0].Id;
+      }
+
+      // Update the case
+      const updateResult = await this.conn.sobject('Case').update(updateRecord);
+      
+      // Handle JSForce update result
+      const updateResponse = Array.isArray(updateResult) ? updateResult[0] : updateResult;
+      if (!(updateResponse as any).success) {
+        throw new Error(`Failed to update case: ${(updateResponse as any).errors?.[0]?.message || 'Unknown error'}`);
+      }
+
+      // Create case history record for audit trail
+      if (caseUpdate.reason) {
+        await this.conn.sobject('CaseComment').create({
+          ParentId: caseUpdate.caseId,
+          CommentBody: `Status changed from ${previousStatus} to ${caseUpdate.status}. Reason: ${caseUpdate.reason}`,
+          IsPublished: true
+        });
+      }
+
+      // Send Slack alert for status change
+      if (this.config.slackWebhookUrl) {
+        await this.sendSlackAlert({
+          message: `Case ${currentCase.CaseNumber} status updated from ${previousStatus} to ${caseUpdate.status}`,
+          priority: caseUpdate.status === 'Escalated' ? 'warning' : 'info',
+          caseId: caseUpdate.caseId,
+          customFields: {
+            caseNumber: currentCase.CaseNumber,
+            subject: currentCase.Subject,
+            previousStatus,
+            newStatus: caseUpdate.status,
+            reason: caseUpdate.reason
+          }
+        });
+      }
+
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to update case status: ${error}`);
     }
   }
 

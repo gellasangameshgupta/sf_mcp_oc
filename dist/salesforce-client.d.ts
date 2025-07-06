@@ -7,8 +7,8 @@ export declare class SalesforceClient {
     getOrderStatus(orderId: string): Promise<OrderStatus>;
     createReturn(returnRequest: ReturnRequest): Promise<string>;
     emailReturnLabel(returnOrderId: string, customerEmail: string): Promise<boolean>;
-    updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean>;
     createCaseFromReturn(returnOrderId: string): Promise<string>;
+    updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean>;
     sendSlackAlert(alert: SlackAlert): Promise<boolean>;
     private isValidStatusTransition;
     private getSlackIconByPriority;
