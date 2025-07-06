@@ -114,7 +114,7 @@ export class SalesforceClient {
                 ReturnOrderId: returnOrderResult.id,
                 OrderItemId: returnRequest.lineItemId,
                 Product2Id: orderItem.Product2Id,
-                Quantity: returnRequest.quantity,
+                QuantityToReturn: returnRequest.quantity,
                 UnitPrice: orderItem.UnitPrice,
                 ReasonCode: returnRequest.reason,
                 Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason}`
@@ -323,7 +323,7 @@ export class SalesforceClient {
             // Get return order details with line items
             const returnQuery = `
         SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
-               (SELECT Id, Product2Id, Product2.Name, Quantity, ReasonCode, Description 
+               (SELECT Id, Product2Id, Product2.Name, QuantityToReturn, ReasonCode, Description 
                 FROM ReturnOrderLineItems)
         FROM ReturnOrder 
         WHERE Id = '${returnOrderId}'
@@ -364,7 +364,7 @@ export class SalesforceClient {
             if (returnOrder.ReturnOrderLineItems && returnOrder.ReturnOrderLineItems.records.length > 0) {
                 caseDescription += `\nReturning Items:\n`;
                 returnOrder.ReturnOrderLineItems.records.forEach((lineItem, index) => {
-                    caseDescription += `${index + 1}. ${lineItem.Product2?.Name || 'Unknown Product'} (Qty: ${lineItem.Quantity}) - Reason: ${lineItem.ReasonCode}\n`;
+                    caseDescription += `${index + 1}. ${lineItem.Product2?.Name || 'Unknown Product'} (Qty: ${lineItem.QuantityToReturn}) - Reason: ${lineItem.ReasonCode}\n`;
                 });
             }
             // Determine priority based on return reason
@@ -397,7 +397,7 @@ export class SalesforceClient {
             }
             // Send Slack alert for new case
             if (this.config.slackWebhookUrl) {
-                const lineItemSummary = returnOrder.ReturnOrderLineItems?.records?.map((item) => `${item.Product2?.Name || 'Unknown'} (${item.Quantity})`).join(', ') || 'No items';
+                const lineItemSummary = returnOrder.ReturnOrderLineItems?.records?.map((item) => `${item.Product2?.Name || 'Unknown'} (${item.QuantityToReturn})`).join(', ') || 'No items';
                 await this.sendSlackAlert({
                     message: `New case created for return order ${returnOrder.ReturnOrderNumber}`,
                     priority: hasDefectiveItems ? 'warning' : 'info',
