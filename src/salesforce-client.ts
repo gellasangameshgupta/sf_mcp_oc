@@ -205,7 +205,7 @@ export class SalesforceClient {
 
       const emailTemplate = {
         //targetObjectId: returnOrder.OrderId,
-        ToAddress: [customerEmail],
+        ToAddress: customerEmail,
         Subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
         HtmlBody: `
           <p>Dear Customer,</p>
