@@ -118,7 +118,6 @@ export class SalesforceClient {
         OrderId: orderItem.OrderId,
         AccountId: orderItem.Order.AccountId,
         Status: 'Draft',
-        ReturnOrderDate: new Date().toISOString().split('T')[0], // Date only format
         Description: returnRequest.description || `Return for Order Item ${returnRequest.lineItemId}`
       };
 
@@ -380,7 +379,7 @@ export class SalesforceClient {
 
       // Get return order details with line items
       const returnQuery = `
-        SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId__c,
+        SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
                (SELECT Id, Product2Id, Product2.Name, Quantity, ReasonCode, Description 
                 FROM ReturnOrderLineItems)
         FROM ReturnOrder 
@@ -397,8 +396,8 @@ export class SalesforceClient {
       const returnOrder = returnResult.records[0] as any;
 
       // Check if case already exists for this return
-      if (returnOrder.CaseId__c) {
-        throw new Error(`A case already exists for return order ${returnOrder.ReturnOrderNumber}. Case ID: ${returnOrder.CaseId__c}`);
+      if (returnOrder.CaseId) {
+        throw new Error(`A case already exists for return order ${returnOrder.ReturnOrderNumber}. Case ID: ${returnOrder.CaseId}`);
       }
 
       // Validate return status - only create cases for certain statuses
@@ -461,15 +460,15 @@ export class SalesforceClient {
         throw new Error(`Failed to create case: ${caseResult.errors?.[0]?.message || 'Unknown error'}`);
       }
 
-      // Update return order with case ID (custom field)
+      // Update return order with case ID (standard field)
       try {
         await this.conn.sobject('ReturnOrder').update({
           Id: returnOrderId,
-          CaseId__c: caseResult.id
+          CaseId: caseResult.id
         });
       } catch (customFieldError) {
-        // If custom field doesn't exist, just log and continue
-        console.warn('Custom CaseId__c field not found on ReturnOrder. Case created but link not established:', customFieldError);
+        // If standard field doesn't exist, just log and continue
+        console.warn('Standard CaseId field not found on ReturnOrder. Case created but link not established:', customFieldError);
       }
 
       // Send Slack alert for new case

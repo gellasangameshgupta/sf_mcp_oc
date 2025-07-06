@@ -63,9 +63,11 @@ The Order Concierge acts as a sophisticated customer service assistant that inte
 ### Custom Enhancements
 
 #### Custom Fields on ReturnOrder
-- **CaseId__c** - Links return orders to support cases
 - **LabelEmailSent__c** - Tracks if return label was emailed
 - **LabelEmailSentDate__c** - Timestamp of label email
+
+#### Standard Fields Used
+- **CaseId** - Standard field linking return orders to support cases
 
 #### Flow Automation
 - **ReturnOrder_Label_Email_Management** - Manages email timestamp automation
