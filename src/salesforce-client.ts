@@ -14,62 +14,69 @@ export class SalesforceClient {
 
   async connect(): Promise<void> {
     try {
-      // Check if we have username/password (fallback authentication)
-      const username = process.env.SF_USERNAME;
-      const password = process.env.SF_PASSWORD;
-      const securityToken = process.env.SF_SECURITY_TOKEN;
-
-      if (username && password) {
-        // Use username/password authentication
-        console.log('Using username/password authentication');
-        await this.conn.login(username, password + (securityToken || ''));
-        console.log('✅ Salesforce connection established via username/password');
-        return;
-      }
-
-      // Use OAuth 2.0 Client Credentials flow
+      // OAuth 2.0 Client Credentials flow (same as Postman)
       if (!this.config.clientId || !this.config.clientSecret) {
-        throw new Error('OAuth 2.0 credentials (clientId and clientSecret) are required, or provide SF_USERNAME and SF_PASSWORD');
+        throw new Error('OAuth 2.0 credentials (clientId and clientSecret) are required');
       }
 
-      console.log('Attempting OAuth 2.0 authentication...');
+      console.log('🔐 Authenticating with Salesforce OAuth 2.0...');
+      console.log('Login URL:', this.config.loginUrl);
+      console.log('Client ID:', this.config.clientId ? this.config.clientId.substring(0, 10) + '...' : 'NOT SET');
+      
+      const tokenUrl = `${this.config.loginUrl}/services/oauth2/token`;
+      const params = new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret
+      });
 
-      // Try JSForce OAuth with direct token request first
+      console.log('Token URL:', tokenUrl);
+      console.log('Request params:', params.toString().replace(/client_secret=[^&]*/g, 'client_secret=***'));
+
+      const tokenResponse = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        },
+        body: params
+      });
+
+      console.log('Response status:', tokenResponse.status);
+      console.log('Response headers:', Object.fromEntries(tokenResponse.headers.entries()));
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('OAuth error response:', errorText);
+        throw new Error(`OAuth authentication failed (${tokenResponse.status}): ${errorText}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      console.log('Token response keys:', Object.keys(tokenData));
+      
+      if (!tokenData.access_token || !tokenData.instance_url) {
+        throw new Error('Invalid token response: missing access_token or instance_url');
+      }
+
+      // Create new connection with the token
+      this.conn = new jsforce.Connection({
+        loginUrl: this.config.loginUrl,
+        instanceUrl: tokenData.instance_url,
+        accessToken: tokenData.access_token
+      });
+
+      // Test the connection with a simple query
       try {
-        // Direct token request for OAuth 2.0
-        const tokenResponse = await fetch(`${this.config.loginUrl}/services/oauth2/token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret
-          })
-        });
-
-        if (!tokenResponse.ok) {
-          const error = await tokenResponse.text();
-          throw new Error(`OAuth token request failed: ${error}. Please check your Connected App settings or use username/password authentication by setting SF_USERNAME and SF_PASSWORD environment variables.`);
-        }
-
-        const tokenData = await tokenResponse.json();
-        
-        // Initialize connection with access token
-        this.conn = new jsforce.Connection({
-          loginUrl: this.config.loginUrl,
-          instanceUrl: tokenData.instance_url,
-          accessToken: tokenData.access_token
-        });
-
-        console.log('✅ Salesforce OAuth connection established via direct token');
-      } catch (tokenError) {
-        throw tokenError;
+        await this.conn.query("SELECT Id FROM User LIMIT 1");
+        console.log('✅ Salesforce OAuth connection established and verified');
+      } catch (testError) {
+        console.error('❌ Connection test failed:', testError);
+        throw new Error(`OAuth token acquired but connection test failed: ${testError}`);
       }
+      
     } catch (error) {
       console.error('❌ Salesforce connection failed:', error);
-      throw new Error(`Failed to connect to Salesforce: ${error instanceof Error ? error.message : error}`);
+      throw error; // Re-throw the original error without wrapping
     }
   }
 
