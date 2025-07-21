@@ -63,11 +63,8 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     // Create Salesforce config
     const config: SalesforceConfig = {
       loginUrl: process.env.SF_LOGIN_URL || 'https://test.salesforce.com',
-      username: process.env.SF_USERNAME || '',
-      password: process.env.SF_PASSWORD || '',
-      securityToken: process.env.SF_SECURITY_TOKEN,
-      clientId: process.env.SF_CLIENT_ID,
-      clientSecret: process.env.SF_CLIENT_SECRET,
+      clientId: process.env.SF_CLIENT_ID || '',
+      clientSecret: process.env.SF_CLIENT_SECRET || '',
       slackWebhookUrl: process.env.SLACK_WEBHOOK_URL,
     };
 

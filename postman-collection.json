@@ -1,9 +1,9 @@
 {
   "info": {
-    "name": "Salesforce Order Concierge MCP",
-    "description": "Test collection for Salesforce Order Concierge MCP server with standard ReturnOrder objects",
+    "name": "Salesforce Order Concierge MCP - OAuth 2.0",
+    "description": "Test collection for Salesforce Order Concierge MCP server using OAuth 2.0 Client Credentials authentication with Netlify Functions",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "2.0.0"
+    "version": "3.0.0"
   },
   "item": [
     {
@@ -12,9 +12,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/health",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
           "path": ["health"]
         }
       }
@@ -30,10 +29,9 @@
           }
         ],
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/list",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "list"]
+          "raw": "{{baseUrl}}/tools-list",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-list"]
         }
       }
     },
@@ -52,10 +50,9 @@
           "raw": "{\n  \"name\": \"check_order_status\",\n  \"arguments\": {\n    \"orderId\": \"801xx0000000001\"\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     },
@@ -74,10 +71,9 @@
           "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"orderId\": \"801xx0000000001\",\n    \"lineItemId\": \"802xx0000000001\",\n    \"reason\": \"Defective\",\n    \"quantity\": 1,\n    \"description\": \"Product stopped working after 2 days\"\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     },
@@ -96,10 +92,9 @@
           "raw": "{\n  \"name\": \"email_return_label\",\n  \"arguments\": {\n    \"returnOrderId\": \"0OR5x0000000001\",\n    \"customerEmail\": \"customer@example.com\"\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     },
@@ -118,10 +113,9 @@
           "raw": "{\n  \"name\": \"update_case_status\",\n  \"arguments\": {\n    \"caseId\": \"500xx0000000001\",\n    \"status\": \"Working\",\n    \"reason\": \"Investigating return request\",\n    \"priority\": \"High\"\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     },
@@ -140,10 +134,9 @@
           "raw": "{\n  \"name\": \"create_case_from_return\",\n  \"arguments\": {\n    \"returnOrderId\": \"0OR5x0000000001\"\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     },
@@ -162,10 +155,9 @@
           "raw": "{\n  \"name\": \"send_slack_alert\",\n  \"arguments\": {\n    \"message\": \"High priority case requires attention\",\n    \"priority\": \"error\",\n    \"caseId\": \"500xx0000000001\",\n    \"customFields\": {\n      \"returnOrderId\": \"0OR5x0000000001\",\n      \"customerEmail\": \"customer@example.com\"\n    }\n  }\n}"
         },
         "url": {
-          "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",
-          "protocol": "https",
-          "host": ["sfmcpoc-production", "up", "railway", "app"],
-          "path": ["mcp", "tools", "call"]
+          "raw": "{{baseUrl}}/tools-call",
+          "host": ["{{baseUrl}}"],
+          "path": ["tools-call"]
         }
       }
     }
@@ -173,13 +165,35 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://sfmcpoc-production.up.railway.app",
-      "type": "string"
+      "value": "https://your-netlify-app.netlify.app/.netlify/functions",
+      "type": "string",
+      "description": "Netlify Functions base URL - replace with your actual Netlify app URL"
     },
     {
       "key": "localUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
+      "value": "http://localhost:8888/.netlify/functions",
+      "type": "string",
+      "description": "Local Netlify Dev server URL for testing"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// OAuth 2.0 Configuration for Salesforce",
+          "// Set these variables in your Postman environment:",
+          "// - SF_CLIENT_ID: Your Salesforce Connected App Client ID",
+          "// - SF_CLIENT_SECRET: Your Salesforce Connected App Client Secret",
+          "// - SF_LOGIN_URL: https://login.salesforce.com (or https://test.salesforce.com for sandbox)",
+          "// - SLACK_WEBHOOK_URL: Your Slack webhook URL (optional)",
+          "",
+          "// Authentication is handled server-side using OAuth 2.0 Client Credentials flow",
+          "// No authentication headers needed for API requests",
+          "console.log('Using OAuth 2.0 authentication configured on server');"
+        ]
+      }
     }
   ]
 }

@@ -45,10 +45,8 @@
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
 
 # Environment variables (these will need to be set in Netlify dashboard)
+# Required OAuth 2.0 variables:
 # SF_LOGIN_URL
-# SF_USERNAME  
-# SF_PASSWORD
-# SF_SECURITY_TOKEN
 # SF_CLIENT_ID
 # SF_CLIENT_SECRET
 # SLACK_WEBHOOK_URL

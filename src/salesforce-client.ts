@@ -14,13 +14,49 @@ export class SalesforceClient {
 
   async connect(): Promise<void> {
     try {
-      if (this.config.clientId && this.config.clientSecret) {
-        await this.conn.login(this.config.username, this.config.password + (this.config.securityToken || ''));
-      } else {
-        await this.conn.login(this.config.username, this.config.password + (this.config.securityToken || ''));
+      // Use OAuth 2.0 Client Credentials flow
+      if (!this.config.clientId || !this.config.clientSecret) {
+        throw new Error('OAuth 2.0 credentials (clientId and clientSecret) are required');
       }
+
+      // Create OAuth 2.0 connection with JSForce
+      const oauth2 = new jsforce.OAuth2({
+        loginUrl: this.config.loginUrl,
+        clientId: this.config.clientId,
+        clientSecret: this.config.clientSecret
+      });
+
+      // Use client credentials flow to get access token
+      const tokenResponse = await fetch(`${this.config.loginUrl}/services/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const error = await tokenResponse.text();
+        throw new Error(`OAuth token request failed: ${error}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      
+      // Initialize connection with access token
+      this.conn = new jsforce.Connection({
+        loginUrl: this.config.loginUrl,
+        instanceUrl: tokenData.instance_url,
+        accessToken: tokenData.access_token
+      });
+
+      console.log('✅ Salesforce OAuth connection established');
     } catch (error) {
-      throw new Error(`Failed to connect to Salesforce: ${error}`);
+      console.error('❌ Salesforce OAuth connection failed:', error);
+      throw new Error(`Failed to connect to Salesforce via OAuth: ${error instanceof Error ? error.message : error}`);
     }
   }
 
