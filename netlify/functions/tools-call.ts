@@ -80,7 +80,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         if (!args.orderId) {
           throw new Error('orderId is required');
         }
-        const orderDetails = await salesforceClient.checkOrderStatus(args.orderId);
+        const orderDetails = await salesforceClient.getOrderStatus(args.orderId);
         result = {
           content: [{
             type: 'text',
