@@ -124,6 +124,7 @@
             } catch (error) {
                 const statusDot = document.getElementById('status-dot');
                 const statusText = document.getElementById('status-text');
+                console.log(error);
                 statusDot.className = 'status-indicator offline';
                 statusText.textContent = 'Connection Error';
             }

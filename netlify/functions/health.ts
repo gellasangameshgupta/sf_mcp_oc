@@ -33,11 +33,14 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
 
     // Test Salesforce connection
     let salesforceStatus = 'disconnected';
+    let salesforceError = '';
     try {
       await salesforceClient.connect();
       salesforceStatus = 'connected';
     } catch (error) {
       salesforceStatus = 'connection_failed';
+      salesforceError = error instanceof Error ? error.message : String(error);
+      console.error('Salesforce connection error:', salesforceError);
     }
 
     const response = {
@@ -47,6 +50,13 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       mode: 'Netlify Functions',
       platform: 'Netlify',
       salesforce: salesforceStatus,
+      salesforceError: salesforceError || undefined,
+      config: {
+        loginUrl: config.loginUrl,
+        hasClientId: !!config.clientId,
+        hasClientSecret: !!config.clientSecret,
+        hasSlackWebhook: !!config.slackWebhookUrl
+      },
       endpoints: {
         health: 'GET /.netlify/functions/health',
         tools: 'POST /.netlify/functions/tools-list',
