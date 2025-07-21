@@ -311,6 +311,28 @@ class OrderConciergeServer {
     }
     async startHttpMcpServer() {
         const port = process.env.PORT || 3000;
+        // Connect to Salesforce when server starts with retry logic
+        let connectionAttempts = 0;
+        const maxAttempts = 3;
+        while (connectionAttempts < maxAttempts) {
+            try {
+                await this.salesforceClient.connect();
+                console.error('✅ Salesforce connection established');
+                break;
+            }
+            catch (error) {
+                connectionAttempts++;
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                console.error(`❌ Salesforce connection attempt ${connectionAttempts}/${maxAttempts} failed:`, errorMsg);
+                if (connectionAttempts < maxAttempts) {
+                    console.error(`⏳ Retrying in 2 seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                else {
+                    console.error('🚫 All Salesforce connection attempts failed. Server will start but tools may not work.');
+                }
+            }
+        }
         const httpServer = createServer(async (req, res) => {
             // Set CORS headers
             res.setHeader('Access-Control-Allow-Origin', '*');
@@ -324,13 +346,23 @@ class OrderConciergeServer {
             const url = new URL(req.url || '/', `http://${req.headers.host}`);
             try {
                 if (url.pathname === '/health' || url.pathname === '/') {
-                    // Health check endpoint
+                    // Health check endpoint with Salesforce connection status
+                    let salesforceStatus = 'disconnected';
+                    try {
+                        // Quick connection test
+                        await this.salesforceClient.connect();
+                        salesforceStatus = 'connected';
+                    }
+                    catch (error) {
+                        salesforceStatus = 'connection_failed';
+                    }
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         status: 'healthy',
                         service: 'Salesforce Order Concierge MCP Server',
                         version: '1.0.0',
                         mode: 'HTTP-MCP Bridge',
+                        salesforce: salesforceStatus,
                         endpoints: {
                             tools: 'POST /mcp/tools/list',
                             call: 'POST /mcp/tools/call'
@@ -338,10 +370,132 @@ class OrderConciergeServer {
                     }));
                 }
                 else if (url.pathname === '/mcp/tools/list' && req.method === 'POST') {
-                    // MCP tools list endpoint
-                    const toolsResponse = await this.server.request({
-                        method: 'tools/list'
-                    }, ListToolsRequestSchema);
+                    // MCP tools list endpoint - return tools directly
+                    const toolsResponse = {
+                        tools: [
+                            {
+                                name: 'check_order_status',
+                                description: 'Check the status and details of a Salesforce order by ID or order number',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        orderId: {
+                                            type: 'string',
+                                            description: 'Salesforce Order ID (15/18 chars) or Order Number'
+                                        }
+                                    },
+                                    required: ['orderId']
+                                }
+                            },
+                            {
+                                name: 'create_return',
+                                description: 'Create a return order request for defective or damaged items',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        orderNumber: {
+                                            type: 'string',
+                                            description: 'The original order number'
+                                        },
+                                        quantity: {
+                                            type: 'number',
+                                            description: 'Number of items to return'
+                                        },
+                                        reason: {
+                                            type: 'string',
+                                            description: 'Reason for return (optional)'
+                                        }
+                                    },
+                                    required: ['orderNumber', 'quantity']
+                                }
+                            },
+                            {
+                                name: 'email_return_label',
+                                description: 'Email a return shipping label to customer',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        returnOrderId: {
+                                            type: 'string',
+                                            description: 'The return order ID'
+                                        },
+                                        emailAddress: {
+                                            type: 'string',
+                                            description: 'Customer email address'
+                                        }
+                                    },
+                                    required: ['returnOrderId', 'emailAddress']
+                                }
+                            },
+                            {
+                                name: 'create_case_from_return',
+                                description: 'Create a support case from a return order',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        returnOrderId: {
+                                            type: 'string',
+                                            description: 'The return order ID to create case from'
+                                        }
+                                    },
+                                    required: ['returnOrderId']
+                                }
+                            },
+                            {
+                                name: 'update_case_status',
+                                description: 'Update the status of a support case',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        caseId: {
+                                            type: 'string',
+                                            description: 'The case ID to update'
+                                        },
+                                        status: {
+                                            type: 'string',
+                                            description: 'New status for the case'
+                                        },
+                                        reason: {
+                                            type: 'string',
+                                            description: 'Reason for status change (optional)'
+                                        },
+                                        assignedTo: {
+                                            type: 'string',
+                                            description: 'User to assign the case to (optional)'
+                                        }
+                                    },
+                                    required: ['caseId', 'status']
+                                }
+                            },
+                            {
+                                name: 'send_slack_alert',
+                                description: 'Send a Slack alert notification',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        message: {
+                                            type: 'string',
+                                            description: 'The alert message to send'
+                                        },
+                                        priority: {
+                                            type: 'string',
+                                            enum: ['info', 'warning', 'error', 'critical'],
+                                            description: 'Alert priority level (optional, defaults to info)'
+                                        },
+                                        caseId: {
+                                            type: 'string',
+                                            description: 'Related case ID (optional)'
+                                        },
+                                        customFields: {
+                                            type: 'object',
+                                            description: 'Additional custom fields to include in the alert (optional)'
+                                        }
+                                    },
+                                    required: ['message']
+                                }
+                            }
+                        ]
+                    };
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(toolsResponse));
                 }
@@ -354,7 +508,7 @@ class OrderConciergeServer {
                             const requestData = JSON.parse(body);
                             const { name, arguments: args } = requestData;
                             // Validate required fields
-                            if (!name || !args) {
+                            if (!name || typeof name !== 'string' || args === undefined || args === null) {
                                 res.writeHead(400, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     error: 'Bad Request',
@@ -362,8 +516,7 @@ class OrderConciergeServer {
                                 }));
                                 return;
                             }
-                            // Connect to Salesforce and execute tool
-                            await this.salesforceClient.connect();
+                            // Execute tool (Salesforce connection established at startup)
                             let result;
                             switch (name) {
                                 case 'check_order_status': {
@@ -501,6 +654,8 @@ class OrderConciergeServer {
                 }
             }
             catch (error) {
+                console.error('❌ Server error:', error);
+                console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     error: 'Internal Server Error',

@@ -173,11 +173,6 @@
         </select>
       </div>
       <div class="input-group">
-        <label for="slack-channel">Channel (optional):</label>
-        <input type="text" id="slack-channel"
-               placeholder="#channel or @user"/>
-      </div>
-      <div class="input-group">
         <label for="slack-case-id">Case ID (optional):</label>
         <input type="text" id="slack-case-id"
                placeholder="e.g. 50000000123456"/>
@@ -288,11 +283,9 @@
         case 'send_slack_alert':
           args.message  = document.getElementById('slack-message').value.trim();
           args.priority = document.getElementById('slack-priority').value;
-          const chan     = document.getElementById('slack-channel').value.trim();
           const cId      = document.getElementById('slack-case-id').value.trim();
           const cfText   = document.getElementById('slack-custom-fields').value.trim();
           if (!args.message) return showResult('❌ Slack message text is required','error');
-          if (chan) args.channel = chan;
           if (cId)  args.caseId  = cId;
           if (cfText) {
             try {
