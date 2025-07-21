@@ -53,9 +53,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       salesforceError: salesforceError || undefined,
       config: {
         loginUrl: config.loginUrl,
-        hasClientId: config.clientId,
-        hasClientSecret: config.clientSecret,
-        hasSlackWebhook: config.slackWebhookUrl
+        hasClientId: !!config.clientId,
+        hasClientSecret: !!config.clientSecret,
+        hasSlackWebhook: !!config.slackWebhookUrl
       },
       endpoints: {
         health: 'GET /.netlify/functions/health',
