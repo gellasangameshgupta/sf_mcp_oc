@@ -30,11 +30,11 @@
   to = "/.netlify/functions/tools-call"
   status = 200
 
-# Catch-all redirect for SPA behavior (optional)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Catch-all redirect for SPA behavior (optional) - disabled to avoid conflicts with functions
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
 
 # Headers for CORS
 [[headers]]
