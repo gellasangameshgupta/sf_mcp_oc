@@ -51,7 +51,8 @@ export type SlackAlert = z.infer<typeof SlackAlertSchema>;
 
 export interface SalesforceConfig {
   loginUrl: string;
-  clientId: string;
-  clientSecret: string;
+  username: string;
+  password: string;
+  securityToken: string;
   slackWebhookUrl?: string;
 }
