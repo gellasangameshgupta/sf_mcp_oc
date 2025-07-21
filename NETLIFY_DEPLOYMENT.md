@@ -42,7 +42,7 @@ Set these in your Netlify Dashboard under Site Settings → Environment Variable
 - `SF_USERNAME` - Your Salesforce username
 - `SF_PASSWORD` - Your Salesforce password  
 - `SF_SECURITY_TOKEN` - Your Salesforce security token
-- `SF_LOGIN_URL` - Salesforce login URL (default: https://login.salesforce.com)
+- `SF_LOGIN_URL` - Salesforce login URL (default: your-sf-login-url)
 
 ### Optional Salesforce OAuth Variables:
 - `SF_CLIENT_ID` - Connected app client ID

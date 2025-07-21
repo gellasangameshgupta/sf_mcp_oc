@@ -23,7 +23,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
   try {
     // Create Salesforce config
     const config: SalesforceConfig = {
-      loginUrl: process.env.SF_LOGIN_URL || 'https://login.salesforce.com',
+      loginUrl: process.env.SF_LOGIN_URL || 'https://test.salesforce.com',
       username: process.env.SF_USERNAME || '',
       password: process.env.SF_PASSWORD || '',
       securityToken: process.env.SF_SECURITY_TOKEN,

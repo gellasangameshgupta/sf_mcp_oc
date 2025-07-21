@@ -10,6 +10,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Configure secrets scanning
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,NETLIFY_DEPLOYMENT.md,README.md,sfdx-project.json,dist/"
+  SECRETS_SCAN_OMIT_KEYS = "SF_LOGIN_URL"
 
 # Redirect rules
 [[redirects]]
