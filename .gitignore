@@ -38,3 +38,11 @@ claude-desktop-config.json
 # Test files
 test-*.js
 test-*.html
+
+# Netlify
+.netlify/
+dist/
+
+# Local Netlify folder
+.netlify
+NETLIFY_MIGRATION.md

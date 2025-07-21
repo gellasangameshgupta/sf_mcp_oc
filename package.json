@@ -6,19 +6,24 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:netlify": "tsc && npm run copy-static",
+    "copy-static": "cp -r public/* dist/ 2>/dev/null || true",
     "start": "node dist/index.js",
     "dev": "tsc --watch & node --watch dist/index.js",
+    "netlify:dev": "netlify dev",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@netlify/functions": "^2.0.0",
     "jsforce": "^3.0.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/jsforce": "^1.11.0",
+    "netlify-cli": "^17.0.0",
     "typescript": "^5.0.0",
     "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",

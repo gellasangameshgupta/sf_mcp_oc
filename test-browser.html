@@ -194,7 +194,10 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://sfmcpoc-production.up.railway.app';
+    // Auto-detect environment: use current domain for Netlify, fallback for local testing
+    const BASE_URL = window.location.hostname.includes('netlify') 
+      ? window.location.origin 
+      : 'http://localhost:8888';
 
     function updateForm() {
       const tool = document.getElementById('tool-select').value;
