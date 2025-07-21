@@ -517,55 +517,31 @@ export class SalesforceClient {
         throw new Error('Invalid Slack webhook URL format. Must start with https://hooks.slack.com/services/');
       }
 
-      const channel = alert.channel || this.config.slackDefaultChannel || '#general';
-
-      // Validate channel format if provided
-      if (alert.channel && !alert.channel.startsWith('#') && !alert.channel.startsWith('@')) {
-        throw new Error('Channel must start with # for public channels or @ for direct messages');
-      }
+      // Build simple Slack message payload as per webhook documentation
+      let messageText = `${this.getSlackIconByPriority(alert.priority)} ${alert.message}`;
       
-      // Build Slack message payload
-      const payload = {
-        channel,
-        text: alert.message,
-        attachments: [
-          {
-            color: this.getSlackColorByPriority(alert.priority),
-            fields: [
-              {
-                title: 'Priority',
-                value: alert.priority.toUpperCase(),
-                short: true
-              },
-              {
-                title: 'Timestamp',
-                value: new Date().toISOString(),
-                short: true
-              }
-            ]
-          }
-        ]
-      };
-
+      // Add priority information
+      messageText += `\n*Priority:* ${alert.priority.toUpperCase()}`;
+      
+      // Add timestamp
+      messageText += `\n*Time:* ${new Date().toISOString()}`;
+      
       // Add case ID if provided
       if (alert.caseId) {
-        payload.attachments[0].fields.push({
-          title: 'Case ID',
-          value: alert.caseId,
-          short: true
-        });
+        messageText += `\n*Case ID:* ${alert.caseId}`;
       }
-
+      
       // Add custom fields if provided
       if (alert.customFields) {
         for (const [key, value] of Object.entries(alert.customFields)) {
-          payload.attachments[0].fields.push({
-            title: key.charAt(0).toUpperCase() + key.slice(1),
-            value: String(value),
-            short: true
-          });
+          const fieldName = key.charAt(0).toUpperCase() + key.slice(1);
+          messageText += `\n*${fieldName}:* ${String(value)}`;
         }
       }
+
+      const payload = {
+        text: messageText
+      };
 
       // Send to Slack with timeout
       const controller = new AbortController();

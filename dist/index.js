@@ -25,7 +25,6 @@ class OrderConciergeServer {
             clientId: process.env.SF_CLIENT_ID,
             clientSecret: process.env.SF_CLIENT_SECRET,
             slackWebhookUrl: process.env.SLACK_WEBHOOK_URL,
-            slackDefaultChannel: process.env.SLACK_DEFAULT_CHANNEL,
         };
         this.salesforceClient = new SalesforceClient(config);
         this.setupToolHandlers();
@@ -154,10 +153,6 @@ class OrderConciergeServer {
                                     type: 'string',
                                     description: 'The alert message to send'
                                 },
-                                channel: {
-                                    type: 'string',
-                                    description: 'Slack channel to send to (optional, uses default if not provided)'
-                                },
                                 priority: {
                                     type: 'string',
                                     enum: ['info', 'warning', 'error', 'critical'],
@@ -166,6 +161,10 @@ class OrderConciergeServer {
                                 caseId: {
                                     type: 'string',
                                     description: 'Related case ID (optional)'
+                                },
+                                customFields: {
+                                    type: 'object',
+                                    description: 'Additional custom fields to include in the alert (optional)'
                                 }
                             },
                             required: ['message']
@@ -261,7 +260,7 @@ class OrderConciergeServer {
                                 {
                                     type: 'text',
                                     text: success
-                                        ? `Slack alert sent successfully to ${parsed.channel || 'default channel'}.`
+                                        ? `Slack alert sent successfully.`
                                         : `Failed to send Slack alert. Please check the configuration and try again.`
                                 }
                             ]
@@ -441,7 +440,7 @@ class OrderConciergeServer {
                                         content: [{
                                                 type: 'text',
                                                 text: success
-                                                    ? `Slack alert sent successfully to ${parsed.channel || 'default channel'}.`
+                                                    ? `Slack alert sent successfully.`
                                                     : `Failed to send Slack alert. Please check the configuration and try again.`
                                             }]
                                     };

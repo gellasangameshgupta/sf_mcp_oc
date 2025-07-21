@@ -101,7 +101,6 @@ export declare const CaseStatusUpdateSchema: z.ZodObject<{
 }>;
 export declare const SlackAlertSchema: z.ZodObject<{
     message: z.ZodString;
-    channel: z.ZodOptional<z.ZodString>;
     priority: z.ZodDefault<z.ZodEnum<["info", "warning", "error", "critical"]>>;
     caseId: z.ZodOptional<z.ZodString>;
     customFields: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
@@ -109,13 +108,11 @@ export declare const SlackAlertSchema: z.ZodObject<{
     message: string;
     priority: "info" | "warning" | "error" | "critical";
     caseId?: string | undefined;
-    channel?: string | undefined;
     customFields?: Record<string, any> | undefined;
 }, {
     message: string;
     caseId?: string | undefined;
     priority?: "info" | "warning" | "error" | "critical" | undefined;
-    channel?: string | undefined;
     customFields?: Record<string, any> | undefined;
 }>;
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
@@ -131,6 +128,5 @@ export interface SalesforceConfig {
     clientId?: string;
     clientSecret?: string;
     slackWebhookUrl?: string;
-    slackDefaultChannel?: string;
 }
 //# sourceMappingURL=types.d.ts.map

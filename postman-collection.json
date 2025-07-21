@@ -159,7 +159,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"send_slack_alert\",\n  \"arguments\": {\n    \"message\": \"High priority case requires attention\",\n    \"channel\": \"#returns\",\n    \"priority\": \"high\",\n    \"caseId\": \"500xx0000000001\",\n    \"customFields\": {\n      \"returnOrderId\": \"0OR5x0000000001\",\n      \"customerEmail\": \"customer@example.com\"\n    }\n  }\n}"
+          "raw": "{\n  \"name\": \"send_slack_alert\",\n  \"arguments\": {\n    \"message\": \"High priority case requires attention\",\n    \"priority\": \"error\",\n    \"caseId\": \"500xx0000000001\",\n    \"customFields\": {\n      \"returnOrderId\": \"0OR5x0000000001\",\n      \"customerEmail\": \"customer@example.com\"\n    }\n  }\n}"
         },
         "url": {
           "raw": "https://sfmcpoc-production.up.railway.app/mcp/tools/call",

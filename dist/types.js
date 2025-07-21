@@ -33,7 +33,6 @@ export const CaseStatusUpdateSchema = z.object({
 });
 export const SlackAlertSchema = z.object({
     message: z.string(),
-    channel: z.string().optional(),
     priority: z.enum(['info', 'warning', 'error', 'critical']).default('info'),
     caseId: z.string().optional(),
     customFields: z.record(z.string(), z.any()).optional()
