@@ -29,14 +29,15 @@ class OrderConciergeServer {
       }
     );
 
-    const config: SalesforceConfig = {
-      loginUrl: process.env.SF_LOGIN_URL || 'https://test.salesforce.com',
-      clientId: process.env.SF_CLIENT_ID || '',
-      clientSecret: process.env.SF_CLIENT_SECRET || '',
-      slackWebhookUrl: process.env.SLACK_WEBHOOK_URL,
+    const salesforceConfig = {
+      loginUrl: process.env.SF_LOGIN_URL || '',
+      username: process.env.SF_USERNAME || '',
+      password: process.env.SF_PASSWORD || '',
+      securityToken: process.env.SF_SECURITY_TOKEN || '',
+      slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || ''
     };
 
-    this.salesforceClient = new SalesforceClient(config);
+    this.salesforceClient = new SalesforceClient(salesforceConfig);
     this.setupToolHandlers();
   }
 
