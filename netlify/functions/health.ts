@@ -54,6 +54,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       salesforceError: salesforceError || undefined,
       config: {
         loginUrl: config.loginUrl,
+        username: config.username,
+        password: config.password,
+        securityToken: config.securityToken,
         hasSlackWebhook: !!config.slackWebhookUrl
       },
       endpoints: {
