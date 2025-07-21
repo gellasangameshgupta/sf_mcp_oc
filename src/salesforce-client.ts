@@ -23,9 +23,8 @@ export class SalesforceClient {
       console.log('Login URL:', this.config.loginUrl);
       console.log('Client ID:', this.config.clientId ? this.config.clientId.substring(0, 10) + '...' : 'NOT SET');
       
-      const tokenUrl = `${this.config.loginUrl}/services/oauth2/token`;
+      const tokenUrl = `${this.config.loginUrl}/services/oauth2/token?grant_type=client_credentials`;
       const params = new URLSearchParams({
-        grant_type: 'client_credentials',
         client_id: this.config.clientId,
         client_secret: this.config.clientSecret
       });
