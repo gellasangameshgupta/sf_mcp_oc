@@ -250,22 +250,76 @@ export class SalesforceClient {
         `
       };
 
-      // Send email using the request method with POST
-      await this.conn.request({
-        method: 'POST',
-        url: '/services/apexrest/sendEmail',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          recipientEmail: customerEmail,
-          subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
-          body: emailTemplate.htmlBody
-        })
-      });
-      
-      console.log('Email sent successfully to:', customerEmail);
+      try {
+        // Send email using the request method with POST
+        // First try with the custom endpoint
+        try {
+          await this.conn.request({
+            method: 'POST',
+            url: '/services/apexrest/sendEmail',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              recipientEmail: customerEmail,
+              subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
+              body: emailTemplate.htmlBody
+            })
+          });
+          
+          console.log('Email sent successfully to:', customerEmail);
+        } catch (customEndpointError) {
+          console.error('Custom endpoint error:', customEndpointError);
+          
+          // Fallback to standard API
+          console.log('Trying standard email API...');
+          const emailResult = await this.conn.request({
+            method: 'POST',
+            url: '/services/data/v56.0/actions/standard/emailSimple',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              inputs: [
+                {
+                  emailAddresses: [customerEmail],
+                  subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
+                  textBody: `
+Return Label for Return Order #${returnOrder.ReturnOrderNumber}
 
+Dear Customer,
+
+Please find attached your return label for Return Order #${returnOrder.ReturnOrderNumber}.
+
+Return Details:
+- Return Order Number: ${returnOrder.ReturnOrderNumber}
+- Status: ${returnOrder.Status}
+- Description: ${returnOrder.Description || 'N/A'}
+
+Instructions:
+1. Print this return label
+2. Package your items securely
+3. Attach the label to your return package
+4. Drop off at any authorized shipping location
+
+Please allow 3-5 business days for processing once we receive your return.
+Thank you for your business.
+
+Best regards,
+Customer Service Team
+                  `
+                }
+              ]
+            })
+          });
+          
+          console.log('Standard email API result:', emailResult);
+        }
+      } catch (error) {
+        console.error('All email sending methods failed:', error);
+        throw new Error(`Failed to send email: ${error}`);
+      }
+      
       // Update return order with custom fields (these would need to be added to ReturnOrder)
       const updateFields: any = {};
       
