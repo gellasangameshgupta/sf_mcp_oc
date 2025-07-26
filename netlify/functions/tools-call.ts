@@ -105,7 +105,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
 
       case 'email_return_label': {
         const parsed = ReturnLabelRequestSchema.parse(args);
-        const success = await salesforceClient.emailReturnLabel(parsed.returnOrderId, parsed.emailAddress);
+        const success = await salesforceClient.emailReturnLabel(parsed.returnOrderId, parsed.customerEmail);
         result = {
           content: [{
             type: 'text',
