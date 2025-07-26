@@ -251,12 +251,11 @@ export class SalesforceClient {
         saveAsActivity: true
       };
 
-      const emailResult = await this.conn.sobject('EmailMessage').create({
-        ToAddress: emailMessage.toAddresses.join(';'),
-        Subject: emailMessage.subject,
-        HtmlBody: emailMessage.htmlBody,
-        SaveAsActivity: emailMessage.saveAsActivity
-      });
+      const emailResult = await this.conn.request({
+        method: 'POST',
+        url: '/services/apexrest/sendEmail',
+        body: emailMessage as any
+      }) as any;
 
       if (!emailResult.success) {
         throw new Error(`Failed to send email: ${emailResult.errors?.[0]?.message || 'Unknown error'}`);
