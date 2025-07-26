@@ -570,9 +570,17 @@ async sendSlackAlert(alert: SlackAlert): Promise<boolean> {
       text: messageText
     };
     
+    // Check if fetch is available
+    if (typeof fetch === 'undefined') {
+      throw new Error('fetch is not available in this environment. Consider using node-fetch or a similar polyfill.');
+    }
+    
     // Send to Slack with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    console.log('Sending Slack alert to:', this.config.slackWebhookUrl?.substring(0, 30) + '...');
+    console.log('Payload size:', JSON.stringify(payload).length, 'characters');
     
     const response = await fetch(this.config.slackWebhookUrl, {
       method: 'POST',
@@ -585,18 +593,34 @@ async sendSlackAlert(alert: SlackAlert): Promise<boolean> {
     
     clearTimeout(timeoutId);
     
+    console.log('Slack response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Slack API error: ${response.status} ${response.statusText}`);
+      const responseText = await response.text().catch(() => 'Unable to read response body');
+      throw new Error(`Slack API error: ${response.status} ${response.statusText}. Response: ${responseText}`);
     }
     
     return true;
   } catch (error) {
-    // Log error but don't throw - Slack alerts are non-critical
+    // Enhanced error logging for debugging
+    console.error('=== Slack Alert Failure Debug Info ===');
+    console.error('Webhook URL configured:', !!this.config.slackWebhookUrl);
+    console.error('Webhook URL format:', this.config.slackWebhookUrl?.substring(0, 30) + '...');
+    console.error('Alert message:', alert.message?.substring(0, 100));
+    console.error('Alert priority:', alert.priority);
+    
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('Slack alert timed out after 10 seconds');
+    } else if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
     } else {
-      console.error(`Failed to send Slack alert: ${error}`);
+      console.error('Unknown error:', error);
     }
+    console.error('=== End Debug Info ===');
+    
+    // Still return false to not break the main flow
     return false;
   }
 }
