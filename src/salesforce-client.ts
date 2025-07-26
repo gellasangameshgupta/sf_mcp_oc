@@ -225,11 +225,10 @@ export class SalesforceClient {
         throw new Error(`Return label has already been sent on ${returnOrder.LabelEmailSentDate__c}. Cannot send duplicate labels.`);
       }
 
-      const emailTemplate = {
-        //targetObjectId: returnOrder.OrderId,
-        ToAddress: customerEmail,
-        Subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
-        HtmlBody: `
+      const emailMessage = {
+        toAddresses: [customerEmail],
+        subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
+        htmlBody: `
           <p>Dear Customer,</p>
           <p>Please find attached your return label for Return Order #${returnOrder.ReturnOrderNumber}.</p>
           <p><strong>Return Details:</strong></p>
@@ -248,10 +247,20 @@ export class SalesforceClient {
           <p>Please allow 3-5 business days for processing once we receive your return.</p>
           <p>Thank you for your business.</p>
           <p>Best regards,<br/>Customer Service Team</p>
-        `
+        `,
+        saveAsActivity: true
       };
 
-      await this.conn.sobject('EmailMessage').create(emailTemplate);
+      const emailResult = await this.conn.sobject('EmailMessage').create({
+        ToAddress: emailMessage.toAddresses.join(';'),
+        Subject: emailMessage.subject,
+        HtmlBody: emailMessage.htmlBody,
+        SaveAsActivity: emailMessage.saveAsActivity
+      });
+
+      if (!emailResult.success) {
+        throw new Error(`Failed to send email: ${emailResult.errors?.[0]?.message || 'Unknown error'}`);
+      }
       
       // Update return order with custom fields (these would need to be added to ReturnOrder)
       const updateFields: any = {};
