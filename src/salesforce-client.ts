@@ -250,38 +250,21 @@ export class SalesforceClient {
         `
       };
 
-      // Use the Salesforce Email API to send the email
-      try {
-        // Try using the messaging API directly
-        const emailResult = await this.conn.apex.post('/services/apexrest/EmailService', {
-          toAddresses: [customerEmail],
+      // Send email using the request method with POST
+      await this.conn.request({
+        method: 'POST',
+        url: '/services/apexrest/sendEmail',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipientEmail: customerEmail,
           subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
-          htmlBody: emailTemplate.htmlBody
-        });
-        
-        console.log('Email send result:', emailResult);
-        
-        if (!emailResult || (emailResult as any).error) {
-          throw new Error(`Email API error: ${(emailResult as any).error || 'Unknown error'}`);
-        }
-      } catch (emailError) {
-        console.error('Email send error:', emailError);
-        // Fallback to a simpler approach
-        try {
-          // Create an email task instead
-          await this.conn.sobject('Task').create({
-            Subject: `Email: ${emailTemplate.subject}`,
-            Description: `Email to be sent to: ${customerEmail}\n\nContent:\n${emailTemplate.htmlBody}`,
-            Status: 'Not Started',
-            Priority: 'High',
-            WhatId: returnOrderId
-          });
-          console.log('Email task created successfully');
-        } catch (taskError) {
-          console.error('Failed to create email task:', taskError);
-          throw new Error('Failed to send email through available methods');
-        }
-      }
+          body: emailTemplate.htmlBody
+        })
+      });
+      
+      console.log('Email sent successfully to:', customerEmail);
 
       // Update return order with custom fields (these would need to be added to ReturnOrder)
       const updateFields: any = {};
