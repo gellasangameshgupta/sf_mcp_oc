@@ -79,12 +79,12 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
                 type: 'string',
                 description: 'The return order ID'
               },
-              emailAddress: {
+              customerEmail: {
                 type: 'string',
                 description: 'Customer email address'
               }
             },
-            required: ['returnOrderId', 'emailAddress']
+            required: ['returnOrderId', 'customerEmail']
           }
         },
         {

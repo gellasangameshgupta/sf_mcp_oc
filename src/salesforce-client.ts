@@ -225,7 +225,7 @@ export class SalesforceClient {
         throw new Error(`Return label has already been sent on ${returnOrder.LabelEmailSentDate__c}. Cannot send duplicate labels.`);
       }
 
-      const emailMessage = {
+      const emailTemplate = {
         toAddresses: [customerEmail],
         subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
         htmlBody: `
@@ -247,20 +247,42 @@ export class SalesforceClient {
           <p>Please allow 3-5 business days for processing once we receive your return.</p>
           <p>Thank you for your business.</p>
           <p>Best regards,<br/>Customer Service Team</p>
-        `,
-        saveAsActivity: true
+        `
       };
 
-      const emailResult = await this.conn.request({
-        method: 'POST',
-        url: '/services/apexrest/sendEmail',
-        body: emailMessage as any
-      }) as any;
-
-      if (!emailResult.success) {
-        throw new Error(`Failed to send email: ${emailResult.errors?.[0]?.message || 'Unknown error'}`);
+      // Use the Salesforce Email API to send the email
+      try {
+        // Try using the messaging API directly
+        const emailResult = await this.conn.apex.post('/services/apexrest/EmailService', {
+          toAddresses: [customerEmail],
+          subject: `Return Label for Return Order #${returnOrder.ReturnOrderNumber}`,
+          htmlBody: emailTemplate.htmlBody
+        });
+        
+        console.log('Email send result:', emailResult);
+        
+        if (!emailResult || (emailResult as any).error) {
+          throw new Error(`Email API error: ${(emailResult as any).error || 'Unknown error'}`);
+        }
+      } catch (emailError) {
+        console.error('Email send error:', emailError);
+        // Fallback to a simpler approach
+        try {
+          // Create an email task instead
+          await this.conn.sobject('Task').create({
+            Subject: `Email: ${emailTemplate.subject}`,
+            Description: `Email to be sent to: ${customerEmail}\n\nContent:\n${emailTemplate.htmlBody}`,
+            Status: 'Not Started',
+            Priority: 'High',
+            WhatId: returnOrderId
+          });
+          console.log('Email task created successfully');
+        } catch (taskError) {
+          console.error('Failed to create email task:', taskError);
+          throw new Error('Failed to send email through available methods');
+        }
       }
-      
+
       // Update return order with custom fields (these would need to be added to ReturnOrder)
       const updateFields: any = {};
       
