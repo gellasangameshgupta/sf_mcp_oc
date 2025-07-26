@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <description>Auto-launched flow to send return label emails to customers</description>
+    <label>Send Return Label Email</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Send_Email_Action</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    
+    <!-- Input Variables -->
+    <variables>
+        <description>Return Order Salesforce ID</description>
+        <name>returnOrderId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <variables>
+        <description>Customer email address</description>
+        <name>customerEmail</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <variables>
+        <description>Return Order Number</description>
+        <name>returnOrderNumber</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <variables>
+        <description>Return Order Status</description>
+        <name>returnStatus</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <variables>
+        <description>Return Order Description</description>
+        <name>returnDescription</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <!-- Email Body Variable -->
+    <variables>
+        <description>HTML Email Body</description>
+        <name>emailBody</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    
+    <!-- Assignment to build email body -->
+    <assignments>
+        <description>Build HTML email body with return details</description>
+        <name>Build_Email_Body</name>
+        <label>Build Email Body</label>
+        <locationX>176</locationX>
+        <locationY>158</locationY>
+        <assignmentItems>
+            <assignToReference>emailBody</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>&lt;html&gt;
+&lt;body&gt;
+&lt;p&gt;Dear Customer,&lt;/p&gt;
+&lt;p&gt;Please find attached your return label for Return Order #{!returnOrderNumber}.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Return Details:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Return Order Number: {!returnOrderNumber}&lt;/li&gt;
+&lt;li&gt;Status: {!returnStatus}&lt;/li&gt;
+&lt;li&gt;Description: {!returnDescription}&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Instructions:&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Print this return label&lt;/li&gt;
+&lt;li&gt;Package your items securely&lt;/li&gt;
+&lt;li&gt;Attach the label to your return package&lt;/li&gt;
+&lt;li&gt;Drop off at any authorized shipping location&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Please allow 3-5 business days for processing once we receive your return.&lt;/p&gt;
+&lt;p&gt;Thank you for your business.&lt;/p&gt;
+&lt;p&gt;Best regards,&lt;br/&gt;Customer Service Team&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Send_Email_Action</targetReference>
+        </connector>
+    </assignments>
+    
+    <!-- Email Action -->
+    <actionCalls>
+        <description>Send return label email to customer</description>
+        <name>Send_Email_Action</name>
+        <label>Send Email Action</label>
+        <locationX>176</locationX>
+        <locationY>278</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>emailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Return Label for Return Order #{!returnOrderNumber}</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>customerEmail</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderDisplayName</name>
+            <value>
+                <stringValue>Customer Service Team</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderType</name>
+            <value>
+                <stringValue>CurrentUser</stringValue>
+            </value>
+        </inputParameters>
+    </actionCalls>
+</Flow>
