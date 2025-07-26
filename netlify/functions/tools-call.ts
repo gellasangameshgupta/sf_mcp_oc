@@ -110,7 +110,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
           content: [{
             type: 'text',
             text: success 
-              ? `Return label sent successfully to ${parsed.emailAddress}` 
+              ? `Return label sent successfully to ${parsed.customerEmail}` 
               : 'Failed to send return label. Please check the email address and try again.'
           }]
         };
