@@ -539,9 +539,9 @@ async sendSlackAlert(alert: SlackAlert): Promise<boolean> {
       throw new Error('Slack webhook URL not configured. Please set SLACK_WEBHOOK_URL environment variable.');
     }
     
-    // Validate webhook URL format
-    if (!this.config.slackWebhookUrl.startsWith('https://hooks.slack.com/services/')) {
-      throw new Error('Invalid Slack webhook URL format. Must start with https://hooks.slack.com/services/');
+    // Validate webhook URL format - must be a Slack webhook URL
+    if (!this.config.slackWebhookUrl.startsWith('https://hooks.slack.com/')) {
+      throw new Error('Invalid Slack webhook URL format. Must be a valid Slack webhook URL starting with https://hooks.slack.com/');
     }
     
     // Build simple Slack message payload as per webhook documentation
@@ -597,7 +597,19 @@ async sendSlackAlert(alert: SlackAlert): Promise<boolean> {
     
     if (!response.ok) {
       const responseText = await response.text().catch(() => 'Unable to read response body');
-      throw new Error(`Slack API error: ${response.status} ${response.statusText}. Response: ${responseText}`);
+      
+      // Handle specific Slack webhook errors
+      if (response.status === 400) {
+        throw new Error(`Slack webhook error: Invalid payload. ${responseText}`);
+      } else if (response.status === 404) {
+        throw new Error(`Slack webhook error: Webhook URL not found. Check your webhook URL configuration.`);
+      } else if (response.status === 403) {
+        throw new Error(`Slack webhook error: Forbidden. The webhook may be disabled or invalid.`);
+      } else if (response.status >= 500) {
+        throw new Error(`Slack server error: ${response.status} ${response.statusText}. Try again later.`);
+      } else {
+        throw new Error(`Slack API error: ${response.status} ${response.statusText}. Response: ${responseText}`);
+      }
     }
     
     return true;
