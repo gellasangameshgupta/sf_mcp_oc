@@ -468,6 +468,7 @@ For issues related to:
 1. **MCP Official Documentation** - https://modelcontextprotocol.io/docs/getting-started/intro
 2. **MCP Official Servers Github** - https://github.com/modelcontextprotocol/servers?tab=readme-ov-file
 3. **Official Salesforce MCP** - https://github.com/salesforcecli/mcp
+4. **Session Deck** - https://gamma.app/docs/From-Wheres-my-order-to-Instant-Action-sz7i7ulq5vic8pe
 ---
 
 **Note**: This implementation uses Salesforce standard objects (ReturnOrder/ReturnOrderLineItem) instead of custom objects, providing better long-term maintainability and platform integration. The project includes both local MCP server functionality and Netlify serverless deployment options.
