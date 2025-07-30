@@ -164,7 +164,95 @@ npm run build
 node dist/index.js
 ```
 
-## 🔧 Deployment Options
+## 🌐 Netlify Deployment
+
+### Quick Deployment Options
+
+#### Option 1: Git-based Deployment (Recommended)
+1. **Push to GitHub/GitLab/Bitbucket:**
+   ```bash
+   git add .
+   git commit -m "Deploy to Netlify"
+   git push origin main
+   ```
+
+2. **Connect to Netlify:**
+   - Go to [Netlify Dashboard](https://app.netlify.com)
+   - Click "New site from Git"
+   - Connect your Git repository
+   - Netlify will auto-detect configuration from `netlify.toml`
+
+#### Option 2: Manual Deploy
+```bash
+# Build for Netlify
+npm install
+npm run build:netlify
+
+# Deploy with Netlify CLI
+npm install -g netlify-cli
+netlify login
+netlify deploy --prod
+```
+
+### Environment Variables for Netlify
+
+Set these in your Netlify Dashboard under Site Settings → Environment Variables:
+
+#### Required Salesforce Variables:
+- `SF_USERNAME` - Your Salesforce username
+- `SF_PASSWORD` - Your Salesforce password  
+- `SF_SECURITY_TOKEN` - Your Salesforce security token
+- `SF_LOGIN_URL` - Salesforce login URL (default: https://login.salesforce.com)
+
+#### Optional Salesforce OAuth Variables:
+- `SF_CLIENT_ID` - Connected app client ID
+- `SF_CLIENT_SECRET` - Connected app client secret
+
+#### Slack Integration:
+- `SLACK_WEBHOOK_URL` - Your Slack webhook URL
+
+### Netlify API Endpoints
+
+Once deployed, your endpoints will be available at:
+- **Health Check:** `https://your-site.netlify.app/health`
+- **List Tools:** `https://your-site.netlify.app/mcp/tools/list` (POST)
+- **Execute Tool:** `https://your-site.netlify.app/mcp/tools/call` (POST)
+
+### Testing Netlify Deployment
+
+```bash
+# Test health check
+curl https://your-site.netlify.app/health
+
+# Test tools list
+curl -X POST https://your-site.netlify.app/mcp/tools/list \
+  -H "Content-Type: application/json"
+
+# Test Slack alert
+curl -X POST https://your-site.netlify.app/mcp/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "send_slack_alert",
+    "arguments": {
+      "message": "Test deployment successful!",
+      "priority": "info"
+    }
+  }'
+```
+
+### Local Netlify Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start Netlify dev server
+npm run netlify:dev
+```
+
+This starts a local server at `http://localhost:8888` that simulates the Netlify environment.
+
+## 🔧 Alternative Deployment Options
 
 ### Option 1: Modern Salesforce CLI (Recommended)
 ```bash
@@ -245,11 +333,8 @@ SELECT Id, ReturnOrderNumber, Status FROM ReturnOrder LIMIT 1
 SELECT Id, Quantity, ReasonCode FROM ReturnOrderLineItem LIMIT 1
 ```
 
-### Test MCP Tools
-Use the test files provided:
-- `test-mcp.js` - Local MCP testing
-- `test-railway-mcp.js` - Railway deployment testing
-- `postman-collection.json` - API testing collection
+### Test with Postman Collection
+Use the included `postman-collection.json` for comprehensive API testing.
 
 ## 🚨 Troubleshooting
 
@@ -280,31 +365,82 @@ Use the test files provided:
    - Check Slack channel permissions
    - Review server logs for detailed errors
 
+### Netlify-Specific Troubleshooting
+
+1. **Build Failures:**
+   - Check that all dependencies are in `package.json`
+   - Ensure TypeScript compiles without errors: `npm run typecheck`
+
+2. **Salesforce Connection Issues:**
+   - Verify environment variables are set correctly in Netlify Dashboard
+   - Check Salesforce credentials and security token
+   - Test connection locally first
+
+3. **Function Timeouts:**
+   - Netlify functions have a 10-second timeout limit
+   - Optimize Salesforce queries for better performance
+
 ## 📁 Project Structure
 
 ```
 sf_mcp_oc/
 ├── package.xml                    # Deployment manifest
 ├── sfdx-project.json             # Salesforce DX project config
+├── netlify.toml                  # Netlify configuration
 ├── force-app/main/default/       # Salesforce metadata
 │   ├── objects/ReturnOrder/fields/ # Custom fields
 │   └── flows/                     # Flow automation
+├── netlify/functions/            # Netlify serverless functions
+│   ├── health.ts                 # Health check endpoint
+│   ├── tools-list.ts            # Tools list endpoint
+│   └── tools-call.ts            # Tool execution endpoint
+├── public/                       # Static site files
+│   └── index.html               # Landing page
 ├── src/                          # MCP server source code
 │   ├── index.ts                  # Main server implementation
 │   ├── salesforce-client.ts     # Salesforce API integration
 │   └── types.ts                  # TypeScript types and schemas
 ├── dist/                         # Compiled JavaScript
-└── test-*.js                     # Testing utilities
+└── postman-collection.json       # API testing collection
 ```
 
-## 🌟 Benefits of Standard Objects
+## 🌟 Benefits
 
+### Standard Objects
 - **Native Salesforce Support** - Official support and automatic updates
 - **Better Performance** - Optimized for large data volumes  
 - **Standard Integration** - Works with other Salesforce products
 - **Mobile Ready** - Native mobile app support
 - **Future Proof** - Automatic platform updates
 - **Reporting** - Built-in analytics and standard reports
+
+### Netlify Deployment
+- **Serverless Scaling** - Automatic scaling based on demand
+- **Global CDN** - Fast response times worldwide  
+- **Zero Server Maintenance** - No server management required
+- **Built-in CI/CD** - Automatic deployments from Git
+- **Free Tier Available** - Generous free usage limits
+- **HTTPS by Default** - Free SSL certificates
+- **Easy Custom Domains** - Simple domain configuration
+
+## 🔒 Security Notes
+
+1. **Never commit real secrets** to the repository
+2. **Always use environment variables** for sensitive data
+3. **Environment files are ignored** by git
+4. **Use secure Salesforce connections** with proper authentication
+
+## 📊 Monitoring
+
+### Netlify Monitoring
+- **Function Logs:** Available in Netlify Dashboard → Functions tab
+- **Analytics:** Monitor usage and performance in Netlify Dashboard
+- **Alerts:** Set up notifications for deployment failures or high error rates
+
+### Salesforce Monitoring
+- **Setup Audit Trail:** Track configuration changes
+- **Login History:** Monitor API access
+- **Debug Logs:** Troubleshoot flow automation
 
 ## 📄 License
 
@@ -323,8 +459,15 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 For issues related to:
 - **Salesforce deployment**: Check Salesforce documentation for ReturnOrder
 - **MCP server integration**: Review server logs and configuration  
+- **Netlify deployment**: Check Netlify function logs and build output
 - **Custom business logic**: Modify flows and validation rules as needed
 
+*If you need anything more you can always reach out to me on my socials. You know where to find me*
+
+## 🔗 Resources
+1. **MCP Official Documentation** - https://modelcontextprotocol.io/docs/getting-started/intro
+2. **MCP Official Servers Github** - https://github.com/modelcontextprotocol/servers?tab=readme-ov-file
+3. **Official Salesforce MCP** - https://github.com/salesforcecli/mcp
 ---
 
-**Note**: This implementation uses Salesforce standard objects (ReturnOrder/ReturnOrderLineItem) instead of custom objects, providing better long-term maintainability and platform integration.
+**Note**: This implementation uses Salesforce standard objects (ReturnOrder/ReturnOrderLineItem) instead of custom objects, providing better long-term maintainability and platform integration. The project includes both local MCP server functionality and Netlify serverless deployment options.
