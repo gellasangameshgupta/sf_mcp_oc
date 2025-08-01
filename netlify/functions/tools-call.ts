@@ -85,7 +85,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         result = {
           content: [{
             type: 'text',
-            text: `Order Status: ${orderDetails.status}\n\nOrder Details:\n- Order ID: ${orderDetails.orderId}\n- Amount: $${orderDetails.amount}\n- Status: ${orderDetails.status}\n- Account Number: ${orderDetails.accountNumber}\n- Effective Date: ${orderDetails.effectiveDate}${orderDetails.billingAddress ? `\n\nBilling Address:\n- Name: ${orderDetails.billingAddress.name}\n- City: ${orderDetails.billingAddress.city}\n- State: ${orderDetails.billingAddress.state}\n- Country: ${orderDetails.billingAddress.country}\n- Email: ${orderDetails.billingAddress.email}` : ''}`
+            text: `Order Status: ${orderDetails.status}\n\nOrder Details:\n- Order ID: ${orderDetails.orderId}\n- Status: ${orderDetails.status}\n- Amount: $${orderDetails.amount || '0.00'}`
           }]
         };
         break;

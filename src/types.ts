@@ -3,16 +3,7 @@ import { z } from 'zod';
 export const OrderStatusSchema = z.object({
   orderId: z.string(),
   status: z.string(),
-  carrier: z.string().optional(),
-  trackingNumber: z.string().optional(),
-  estimatedDelivery: z.string().optional(),
-  shippingAddress: z.object({
-    street: z.string(),
-    city: z.string(),
-    state: z.string(),
-    zipCode: z.string(),
-    country: z.string()
-  }).optional()
+  amount: z.number().optional()
 });
 
 export const ReturnRequestSchema = z.object({

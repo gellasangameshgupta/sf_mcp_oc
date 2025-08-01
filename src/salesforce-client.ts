@@ -57,17 +57,13 @@ export class SalesforceClient {
       const isValidId = this.isValidSalesforceId(orderId);
       const orderQuery = isValidId 
         ? `
-          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-                 ShippingState, ShippingPostalCode, ShippingCountry
+          SELECT Id, OrderNumber, Status, TotalAmount
           FROM Order 
           WHERE Id = '${orderId}' OR OrderNumber = '${orderId}'
           LIMIT 1
         `
         : `
-          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-                 ShippingState, ShippingPostalCode, ShippingCountry
+          SELECT Id, OrderNumber, Status, TotalAmount
           FROM Order 
           WHERE OrderNumber = '${orderId}'
           LIMIT 1
@@ -84,16 +80,7 @@ export class SalesforceClient {
       return {
         orderId: order.OrderNumber,
         status: order.Status,
-        carrier: order.ShippingCarrier__c,
-        trackingNumber: order.TrackingNumber__c,
-        estimatedDelivery: order.EstimatedDeliveryDate__c,
-        shippingAddress: order.ShippingStreet ? {
-          street: order.ShippingStreet,
-          city: order.ShippingCity,
-          state: order.ShippingState,
-          zipCode: order.ShippingPostalCode,
-          country: order.ShippingCountry
-        } : undefined
+        amount: order.TotalAmount
       };
     } catch (error) {
       throw new Error(`Failed to get order status: ${error}`);

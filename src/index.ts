@@ -197,23 +197,12 @@ class OrderConciergeServer {
             const { orderId } = args as { orderId: string };
             const orderStatus = await this.salesforceClient.getOrderStatus(orderId);
             
-            let response = `Order ${orderStatus.orderId} status: ${orderStatus.status}`;
+            let response = `Order Status: ${orderStatus.status}\n\nOrder Details:\n- Order ID: ${orderStatus.orderId}\n- Status: ${orderStatus.status}`;
             
-            if (orderStatus.carrier) {
-              response += `\nCarrier: ${orderStatus.carrier}`;
-            }
-            
-            if (orderStatus.trackingNumber) {
-              response += `\nTracking Number: ${orderStatus.trackingNumber}`;
-            }
-            
-            if (orderStatus.estimatedDelivery) {
-              response += `\nEstimated Delivery: ${orderStatus.estimatedDelivery}`;
-            }
-            
-            if (orderStatus.shippingAddress) {
-              const addr = orderStatus.shippingAddress;
-              response += `\nShipping to: ${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}, ${addr.country}`;
+            if (orderStatus.amount !== undefined && orderStatus.amount !== null) {
+              response += `\n- Amount: $${orderStatus.amount}`;
+            } else {
+              response += `\n- Amount: $0.00`;
             }
 
             return {
@@ -576,13 +565,11 @@ class OrderConciergeServer {
                   }
                   const orderStatus = await this.salesforceClient.getOrderStatus(args.orderId);
                   
-                  let response = `Order ${orderStatus.orderId} status: ${orderStatus.status}`;
-                  if (orderStatus.carrier) response += `\nCarrier: ${orderStatus.carrier}`;
-                  if (orderStatus.trackingNumber) response += `\nTracking Number: ${orderStatus.trackingNumber}`;
-                  if (orderStatus.estimatedDelivery) response += `\nEstimated Delivery: ${orderStatus.estimatedDelivery}`;
-                  if (orderStatus.shippingAddress) {
-                    const addr = orderStatus.shippingAddress;
-                    response += `\nShipping to: ${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}, ${addr.country}`;
+                  let response = `Order Status: ${orderStatus.status}\n\nOrder Details:\n- Order ID: ${orderStatus.orderId}\n- Status: ${orderStatus.status}`;
+                  if (orderStatus.amount !== undefined && orderStatus.amount !== null) {
+                    response += `\n- Amount: $${orderStatus.amount}`;
+                  } else {
+                    response += `\n- Amount: $0.00`;
                   }
 
                   result = {
