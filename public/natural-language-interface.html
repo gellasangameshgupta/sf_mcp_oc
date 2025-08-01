@@ -225,7 +225,8 @@
             const chatContainer = document.getElementById('chatContainer');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-            messageDiv.innerHTML = content;
+            // Convert newlines to HTML breaks for proper formatting
+            messageDiv.innerHTML = content.replace(/\n/g, '<br>');
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
