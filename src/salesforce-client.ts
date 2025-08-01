@@ -4,6 +4,10 @@ import { SalesforceConfig, OrderStatus, ReturnRequest, CaseStatusUpdate, SlackAl
 export class SalesforceClient {
   private conn: jsforce.Connection;
   private config: SalesforceConfig;
+
+  private isValidSalesforceId(id: string): boolean {
+    return /^[a-zA-Z0-9]{15}$|^[a-zA-Z0-9]{18}$/.test(id);
+  }
   
   constructor(config: SalesforceConfig) {
     this.config = config;
@@ -49,14 +53,25 @@ export class SalesforceClient {
   async getOrderStatus(orderId: string): Promise<OrderStatus> {
     try {
       // Try both ID and OrderNumber with fallback mechanism
-      const orderQuery = `
-        SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-               EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-               ShippingState, ShippingPostalCode, ShippingCountry
-        FROM Order 
-        WHERE Id = '${orderId}' OR OrderNumber = '${orderId}'
-        LIMIT 1
-      `;
+      // If the provided orderId doesn't match Salesforce ID format, only search by OrderNumber
+      const isValidId = this.isValidSalesforceId(orderId);
+      const orderQuery = isValidId 
+        ? `
+          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
+                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
+                 ShippingState, ShippingPostalCode, ShippingCountry
+          FROM Order 
+          WHERE Id = '${orderId}' OR OrderNumber = '${orderId}'
+          LIMIT 1
+        `
+        : `
+          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
+                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
+                 ShippingState, ShippingPostalCode, ShippingCountry
+          FROM Order 
+          WHERE OrderNumber = '${orderId}'
+          LIMIT 1
+        `;
       
       const result = await this.conn.query(orderQuery);
       
@@ -95,13 +110,22 @@ export class SalesforceClient {
       
       // Auto-detect line item if AUTO_DETECT is passed
       if (returnRequest.lineItemId === 'AUTO_DETECT') {
-        const orderItemsQuery = `
-          SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
-          FROM OrderItem 
-          WHERE OrderId = '${returnRequest.orderId}' OR Order.OrderNumber = '${returnRequest.orderId}'
-          ORDER BY CreatedDate ASC
-          LIMIT 1
-        `;
+        const isValidOrderId = this.isValidSalesforceId(returnRequest.orderId);
+        const orderItemsQuery = isValidOrderId
+          ? `
+            SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
+            FROM OrderItem 
+            WHERE OrderId = '${returnRequest.orderId}' OR Order.OrderNumber = '${returnRequest.orderId}'
+            ORDER BY CreatedDate ASC
+            LIMIT 1
+          `
+          : `
+            SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
+            FROM OrderItem 
+            WHERE Order.OrderNumber = '${returnRequest.orderId}'
+            ORDER BY CreatedDate ASC
+            LIMIT 1
+          `;
         
         const orderItemsResult = await this.conn.query(orderItemsQuery);
         
@@ -202,12 +226,20 @@ export class SalesforceClient {
         throw new Error('Return Order ID cannot be empty');
       }
       
-      const returnQuery = `
-        SELECT Id, ReturnOrderNumber, OrderId, Status, Description, LabelEmailSent__c, LabelEmailSentDate__c
-        FROM ReturnOrder 
-        WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
-        LIMIT 1
-      `;
+      const isValidReturnId = this.isValidSalesforceId(returnOrderId);
+      const returnQuery = isValidReturnId
+        ? `
+          SELECT Id, ReturnOrderNumber, OrderId, Status, Description, LabelEmailSent__c, LabelEmailSentDate__c
+          FROM ReturnOrder 
+          WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
+          LIMIT 1
+        `
+        : `
+          SELECT Id, ReturnOrderNumber, OrderId, Status, Description, LabelEmailSent__c, LabelEmailSentDate__c
+          FROM ReturnOrder 
+          WHERE ReturnOrderNumber = '${returnOrderId}'
+          LIMIT 1
+        `;
       
       const result = await this.conn.query(returnQuery);
       
@@ -291,14 +323,24 @@ export class SalesforceClient {
       }
       
       // Get return order details with line items (try both ID and ReturnOrderNumber)
-      const returnQuery = `
-        SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
-               (SELECT Id, Product2Id, Product2.Name, QuantityReturned, Description 
-                FROM ReturnOrderLineItems)
-        FROM ReturnOrder 
-        WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
-        LIMIT 1
-      `;
+      const isValidReturnId = this.isValidSalesforceId(returnOrderId);
+      const returnQuery = isValidReturnId
+        ? `
+          SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
+                 (SELECT Id, Product2Id, Product2.Name, QuantityReturned, Description 
+                  FROM ReturnOrderLineItems)
+          FROM ReturnOrder 
+          WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
+          LIMIT 1
+        `
+        : `
+          SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
+                 (SELECT Id, Product2Id, Product2.Name, QuantityReturned, Description 
+                  FROM ReturnOrderLineItems)
+          FROM ReturnOrder 
+          WHERE ReturnOrderNumber = '${returnOrderId}'
+          LIMIT 1
+        `;
       
       const returnResult = await this.conn.query(returnQuery);
       
@@ -424,10 +466,18 @@ async updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean> {
     }
     
     // First, validate the case exists and get current status (try both ID and CaseNumber)
-    const caseQuery = `
+    const isValidCaseId = this.isValidSalesforceId(caseUpdate.caseId);
+    const caseQuery = isValidCaseId
+      ? `
         SELECT Id, CaseNumber, Status, Priority, OwnerId, Subject, Description, IsClosed
         FROM Case 
         WHERE Id = '${caseUpdate.caseId}' OR CaseNumber = '${caseUpdate.caseId}'
+        LIMIT 1
+      `
+      : `
+        SELECT Id, CaseNumber, Status, Priority, OwnerId, Subject, Description, IsClosed
+        FROM Case 
+        WHERE CaseNumber = '${caseUpdate.caseId}'
         LIMIT 1
       `;
     
