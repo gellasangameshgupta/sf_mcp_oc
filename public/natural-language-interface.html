@@ -208,7 +208,7 @@
         <div class="examples">
             <h3>💡 Try these examples:</h3>
             <ul>
-                <li onclick="fillInput('Check the status of order 12345')">• "Check the status of order 12345"</li>
+                <li onclick="fillInput('Check the status of order 00000100')">• "Check the status of order 00000100"</li>
                 <li onclick="fillInput('Create a return for order ORD001 with 2 items due to damage')">• "Create a return for order ORD001 with 2 items due to damage"</li>
                 <li onclick="fillInput('Email return label for RET123 to customer@email.com')">• "Email return label for RET123 to customer@email.com"</li>
                 <li onclick="fillInput('Update case CASE456 status to Working')">• "Update case CASE456 status to Working"</li>
@@ -242,7 +242,7 @@
             
             // Check order status
             if (lower.includes('check') && lower.includes('order') && lower.includes('status')) {
-                const orderMatch = input.match(/order\s+(\w+)/i);
+                const orderMatch = input.match(/order\s+([a-zA-Z0-9]{6,18})/i);
                 if (orderMatch) {
                     return {
                         tool: 'check_order_status',
@@ -253,7 +253,7 @@
             
             // Create return
             if (lower.includes('create') && lower.includes('return')) {
-                const orderMatch = input.match(/order\s+(\w+)/i);
+                const orderMatch = input.match(/order\s+([a-zA-Z0-9]{6,18})/i);
                 const quantityMatch = input.match(/(\d+)\s+items?/i);
                 const reasonMatch = input.match(/(?:due to|because of|reason:?)\s+([^.]+)/i);
                 
@@ -271,7 +271,7 @@
             
             // Email return label
             if (lower.includes('email') && lower.includes('return') && lower.includes('label')) {
-                const returnMatch = input.match(/(?:return|ret)\s*(\w+)/i);
+                const returnMatch = input.match(/(?:return|ret)\s*([a-zA-Z0-9]{3,18})/i);
                 const emailMatch = input.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
                 
                 if (returnMatch && emailMatch) {
@@ -287,7 +287,7 @@
             
             // Update case status
             if (lower.includes('update') && lower.includes('case')) {
-                const caseMatch = input.match(/case\s+(\w+)/i);
+                const caseMatch = input.match(/case\s+([a-zA-Z0-9]{3,18})/i);
                 const statusMatch = input.match(/status\s+to\s+(\w+)/i) || input.match(/to\s+(\w+)$/i);
                 
                 if (caseMatch && statusMatch) {
@@ -317,7 +317,7 @@
             
             // Create case from return
             if (lower.includes('create') && lower.includes('case') && lower.includes('return')) {
-                const returnMatch = input.match(/return\s+(?:order\s+)?(\w+)/i);
+                const returnMatch = input.match(/return\s+(?:order\s+)?([a-zA-Z0-9]{3,18})/i);
                 
                 if (returnMatch) {
                     return {
