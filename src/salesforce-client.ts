@@ -48,29 +48,15 @@ export class SalesforceClient {
   
   async getOrderStatus(orderId: string): Promise<OrderStatus> {
     try {
-      // Check if orderId looks like a Salesforce ID (15 or 18 chars, alphanumeric)
-      const isSalesforceId = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(orderId);
-      
-      let orderQuery;
-      if (isSalesforceId) {
-        orderQuery = `
-          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-                 ShippingState, ShippingPostalCode, ShippingCountry
-          FROM Order 
-          WHERE Id = '${orderId}'
-          LIMIT 1
-        `;
-      } else {
-        orderQuery = `
-          SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
-                 EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
-                 ShippingState, ShippingPostalCode, ShippingCountry
-          FROM Order 
-          WHERE OrderNumber = '${orderId}'
-          LIMIT 1
-        `;
-      }
+      // Try both ID and OrderNumber with fallback mechanism
+      const orderQuery = `
+        SELECT Id, OrderNumber, Status, ShippingCarrier__c, TrackingNumber__c, 
+               EstimatedDeliveryDate__c, ShippingStreet, ShippingCity, 
+               ShippingState, ShippingPostalCode, ShippingCountry
+        FROM Order 
+        WHERE Id = '${orderId}' OR OrderNumber = '${orderId}'
+        LIMIT 1
+      `;
       
       const result = await this.conn.query(orderQuery);
       
@@ -211,15 +197,15 @@ export class SalesforceClient {
         throw new Error('Invalid email format');
       }
       
-      // Validate return order ID format
-      if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(returnOrderId)) {
-        throw new Error('Invalid return order ID format. Must be a valid Salesforce ID (15 or 18 characters)');
+      // Validate return order ID is not empty (can be ID or number)
+      if (!returnOrderId.trim()) {
+        throw new Error('Return Order ID cannot be empty');
       }
       
       const returnQuery = `
         SELECT Id, ReturnOrderNumber, OrderId, Status, Description, LabelEmailSent__c, LabelEmailSentDate__c
         FROM ReturnOrder 
-        WHERE Id = '${returnOrderId}'
+        WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
         LIMIT 1
       `;
       
@@ -304,18 +290,13 @@ export class SalesforceClient {
         throw new Error('Return Order ID is required and must be a string');
       }
       
-      // Validate return order ID format (Salesforce ID format)
-      if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(returnOrderId)) {
-        throw new Error('Invalid return order ID format. Must be a valid Salesforce ID (15 or 18 characters)');
-      }
-      
-      // Get return order details with line items
+      // Get return order details with line items (try both ID and ReturnOrderNumber)
       const returnQuery = `
         SELECT Id, ReturnOrderNumber, OrderId, Status, Description, Account.Name, CaseId,
                (SELECT Id, Product2Id, Product2.Name, QuantityReturned, Description 
                 FROM ReturnOrderLineItems)
         FROM ReturnOrder 
-        WHERE Id = '${returnOrderId}'
+        WHERE Id = '${returnOrderId}' OR ReturnOrderNumber = '${returnOrderId}'
         LIMIT 1
       `;
       
@@ -442,16 +423,11 @@ async updateCaseStatus(caseUpdate: CaseStatusUpdate): Promise<boolean> {
       throw new Error('Status is required and must be a string');
     }
     
-    // Validate case ID format (Salesforce ID format)
-    if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(caseUpdate.caseId)) {
-      throw new Error('Invalid case ID format. Must be a valid Salesforce ID (15 or 18 characters)');
-    }
-    
-    // First, validate the case exists and get current status
+    // First, validate the case exists and get current status (try both ID and CaseNumber)
     const caseQuery = `
         SELECT Id, CaseNumber, Status, Priority, OwnerId, Subject, Description, IsClosed
         FROM Case 
-        WHERE Id = '${caseUpdate.caseId}'
+        WHERE Id = '${caseUpdate.caseId}' OR CaseNumber = '${caseUpdate.caseId}'
         LIMIT 1
       `;
     

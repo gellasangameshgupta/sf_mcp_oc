@@ -210,10 +210,10 @@
             <ul>
                 <li onclick="fillInput('Check the status of order 00000100')">• "Check the status of order 00000100"</li>
                 <li onclick="fillInput('Create a return for order 00000100')">• "Create a return for order 00000100"</li>
-                <li onclick="fillInput('Email return label for RET123 to customer@email.com')">• "Email return label for RET123 to customer@email.com"</li>
-                <li onclick="fillInput('Update case CASE456 status to Working')">• "Update case CASE456 status to Working"</li>
-                <li onclick="fillInput('Send a high priority Slack alert about urgent issue')">• "Send a high priority Slack alert about urgent issue"</li>
-                <li onclick="fillInput('Create a case from return order RET789')">• "Create a case from return order RET789"</li>
+                <li onclick="fillInput('Email return label for 0OR5x0000000001 to customer@example.com')">• "Email return label for 0OR5x0000000001 to customer@example.com"</li>
+                <li onclick="fillInput('Update case 500xx0000000001 status to Working with high priority')">• "Update case 500xx0000000001 status to Working with high priority"</li>
+                <li onclick="fillInput('Send an error priority Slack alert about urgent case 500xx0000000001')">• "Send an error priority Slack alert about urgent case 500xx0000000001"</li>
+                <li onclick="fillInput('Create a case from return order 0OR5x0000000001')">• "Create a case from return order 0OR5x0000000001"</li>
             </ul>
         </div>
     </div>
@@ -302,13 +302,17 @@
             if (lower.includes('update') && lower.includes('case')) {
                 const caseMatch = input.match(/case\s+([a-zA-Z0-9]{3,18})/i);
                 const statusMatch = input.match(/status\s+to\s+(\w+)/i) || input.match(/to\s+(\w+)$/i);
+                const reasonMatch = input.match(/(?:reason|because):?\s+([^.]+)/i);
+                const priorityMatch = input.match(/(low|medium|high|critical)\s+priority/i);
                 
                 if (caseMatch && statusMatch) {
                     return {
                         tool: 'update_case_status',
                         args: {
                             caseId: caseMatch[1],
-                            status: statusMatch[1]
+                            status: statusMatch[1],
+                            reason: reasonMatch ? reasonMatch[1].trim() : undefined,
+                            priority: priorityMatch ? priorityMatch[1] : undefined
                         }
                     };
                 }
@@ -316,15 +320,23 @@
             
             // Send Slack alert
             if (lower.includes('slack') && lower.includes('alert')) {
-                const priorityMatch = input.match(/(high|low|medium|critical|info|warning|error)\s+priority/i);
+                const priorityMatch = input.match(/(info|warning|error|critical)\s+priority/i);
                 const messageMatch = input.match(/alert\s+about\s+(.+)$/i) || input.match(/send.*"([^"]+)"/i);
+                const caseMatch = input.match(/case\s+([a-zA-Z0-9]{3,18})/i);
+                
+                const args = {
+                    message: messageMatch ? messageMatch[1] : input,
+                    priority: priorityMatch ? priorityMatch[1].toLowerCase() : 'info'
+                };
+                
+                // Add optional fields if present
+                if (caseMatch) {
+                    args.caseId = caseMatch[1];
+                }
                 
                 return {
                     tool: 'send_slack_alert',
-                    args: {
-                        message: messageMatch ? messageMatch[1] : input,
-                        priority: priorityMatch ? priorityMatch[1].toLowerCase() : 'info'
-                    }
+                    args: args
                 };
             }
             
