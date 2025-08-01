@@ -209,7 +209,7 @@
             <h3>💡 Try these examples:</h3>
             <ul>
                 <li onclick="fillInput('Check the status of order 00000100')">• "Check the status of order 00000100"</li>
-                <li onclick="fillInput('Create a return for order ORD001 with 2 items due to damage')">• "Create a return for order ORD001 with 2 items due to damage"</li>
+                <li onclick="fillInput('Create a return for order 00000100')">• "Create a return for order 00000100"</li>
                 <li onclick="fillInput('Email return label for RET123 to customer@email.com')">• "Email return label for RET123 to customer@email.com"</li>
                 <li onclick="fillInput('Update case CASE456 status to Working')">• "Update case CASE456 status to Working"</li>
                 <li onclick="fillInput('Send a high priority Slack alert about urgent issue')">• "Send a high priority Slack alert about urgent issue"</li>
@@ -257,12 +257,12 @@
                 const quantityMatch = input.match(/(\d+)\s+items?/i);
                 const reasonMatch = input.match(/(?:due to|because of|reason:?)\s+([^.]+)/i);
                 
-                if (orderMatch && quantityMatch) {
+                if (orderMatch) {
                     return {
                         tool: 'create_return',
                         args: {
                             orderNumber: orderMatch[1],
-                            quantity: parseInt(quantityMatch[1]),
+                            quantity: quantityMatch ? parseInt(quantityMatch[1]) : 1,
                             reason: reasonMatch ? reasonMatch[1].trim() : 'Customer request'
                         }
                     };
