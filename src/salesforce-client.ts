@@ -93,47 +93,21 @@ export class SalesforceClient {
         throw new Error('Quantity must be greater than 0');
       }
       
-      let actualLineItemId = returnRequest.lineItemId;
-      
-      // Auto-detect line item if AUTO_DETECT is passed
-      if (returnRequest.lineItemId === 'AUTO_DETECT') {
-        const isValidOrderId = this.isValidSalesforceId(returnRequest.orderId);
-        const orderItemsQuery = isValidOrderId
-          ? `
-            SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
-            FROM OrderItem 
-            WHERE OrderId = '${returnRequest.orderId}' OR Order.OrderNumber = '${returnRequest.orderId}'
-            ORDER BY CreatedDate ASC
-            LIMIT 1
-          `
-          : `
-            SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
-            FROM OrderItem 
-            WHERE Order.OrderNumber = '${returnRequest.orderId}'
-            ORDER BY CreatedDate ASC
-            LIMIT 1
-          `;
-        
-        const orderItemsResult = await this.conn.query(orderItemsQuery);
-        
-        if (orderItemsResult.records.length === 0) {
-          throw new Error(`No order items found for order ${returnRequest.orderId}`);
-        }
-        
-        actualLineItemId = (orderItemsResult.records[0] as any).Id;
-      } else {
-        // Validate line item ID format (Salesforce ID format)
-        if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(returnRequest.lineItemId)) {
-          throw new Error('Invalid line item ID format. Must be a valid Salesforce ID (15 or 18 characters)');
-        }
-      }
-      
-      const orderItemQuery = `
-        SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
-        FROM OrderItem 
-        WHERE Id = '${actualLineItemId}'
-        LIMIT 1
-      `;
+      // Query order item by either Salesforce ID or OrderItemNumber
+      const isValidId = this.isValidSalesforceId(returnRequest.lineItemId);
+      const orderItemQuery = isValidId
+        ? `
+          SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId, Order.OrderNumber, OrderItemNumber
+          FROM OrderItem 
+          WHERE Id = '${returnRequest.lineItemId}' OR OrderItemNumber = '${returnRequest.lineItemId}'
+          LIMIT 1
+        `
+        : `
+          SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId, Order.OrderNumber, OrderItemNumber
+          FROM OrderItem 
+          WHERE OrderItemNumber = '${returnRequest.lineItemId}'
+          LIMIT 1
+        `;
       
       const orderItemResult = await this.conn.query(orderItemQuery);
       
@@ -165,10 +139,11 @@ export class SalesforceClient {
       // Create ReturnOrderLineItem
       const returnLineItemRecord = {
         ReturnOrderId: returnOrderResult.id,
-        OrderItemId: returnRequest.lineItemId,
+        OrderItemId: orderItem.Id,
         Product2Id: orderItem.Product2Id,
         QuantityReturned: returnRequest.quantity,
-        Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason || 'No reason provided'}`,
+        ReturnReason: returnRequest.reason,
+        Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason}`
       };
       
       const returnLineItemResult = await this.conn.sobject('ReturnOrderLineItem').create(returnLineItemRecord);

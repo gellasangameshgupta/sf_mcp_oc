@@ -254,11 +254,11 @@
             
             // Create return
             if (lower.includes('create') && lower.includes('return')) {
-                const orderMatch = input.match(/order\s+([a-zA-Z0-9]{6,18})/i);
-                const quantityMatch = input.match(/(\d+)\s+items?/i);
+                const lineItemMatch = input.match(/(?:line\s+item\s+|item\s+)([a-zA-Z0-9]{1,18})/i);
+                const quantityMatch = input.match(/(\d+)\s+(?:items?|units?)/i);
                 const reasonMatch = input.match(/(?:due to|because of|reason:?)\s+([^.]+)/i);
                 
-                if (orderMatch) {
+                if (lineItemMatch) {
                     // Parse reason and map to valid enum values
                     let reason = 'Other';
                     if (reasonMatch) {
@@ -274,8 +274,7 @@
                     return {
                         tool: 'create_return',
                         args: {
-                            orderId: orderMatch[1],
-                            lineItemId: 'AUTO_DETECT',  // Will be handled by backend
+                            lineItemId: lineItemMatch[1],
                             quantity: quantityMatch ? parseInt(quantityMatch[1]) : 1,
                             reason: reason
                         }
