@@ -258,12 +258,25 @@
                 const reasonMatch = input.match(/(?:due to|because of|reason:?)\s+([^.]+)/i);
                 
                 if (orderMatch) {
+                    // Parse reason and map to valid enum values
+                    let reason = 'Other';
+                    if (reasonMatch) {
+                        const reasonText = reasonMatch[1].trim().toLowerCase();
+                        if (reasonText.includes('defective') || reasonText.includes('broken')) reason = 'Defective';
+                        else if (reasonText.includes('damage')) reason = 'Damaged';
+                        else if (reasonText.includes('wrong')) reason = 'Wrong Item';
+                        else if (reasonText.includes('not needed') || reasonText.includes('don\'t need')) reason = 'Not Needed';
+                        else if (reasonText.includes('quality')) reason = 'Quality Issue';
+                        else if (reasonText.includes('size') || reasonText.includes('color')) reason = 'Size/Color';
+                    }
+                    
                     return {
                         tool: 'create_return',
                         args: {
-                            orderNumber: orderMatch[1],
+                            orderId: orderMatch[1],
+                            lineItemId: 'AUTO_DETECT',  // Will be handled by backend
                             quantity: quantityMatch ? parseInt(quantityMatch[1]) : 1,
-                            reason: reasonMatch ? reasonMatch[1].trim() : 'Customer request'
+                            reason: reason
                         }
                     };
                 }

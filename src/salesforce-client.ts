@@ -101,24 +101,40 @@ export class SalesforceClient {
   
   async createReturn(returnRequest: ReturnRequest): Promise<string> {
     try {
-      // Input validation
-      if (!returnRequest.lineItemId || typeof returnRequest.lineItemId !== 'string') {
-        throw new Error('Line Item ID is required and must be a string');
-      }
-      
       if (!returnRequest.quantity || returnRequest.quantity <= 0) {
         throw new Error('Quantity must be greater than 0');
       }
       
-      // Validate line item ID format (Salesforce ID format)
-      if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(returnRequest.lineItemId)) {
-        throw new Error('Invalid line item ID format. Must be a valid Salesforce ID (15 or 18 characters)');
+      let actualLineItemId = returnRequest.lineItemId;
+      
+      // Auto-detect line item if AUTO_DETECT is passed
+      if (returnRequest.lineItemId === 'AUTO_DETECT') {
+        const orderItemsQuery = `
+          SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
+          FROM OrderItem 
+          WHERE OrderId = '${returnRequest.orderId}' OR Order.OrderNumber = '${returnRequest.orderId}'
+          ORDER BY CreatedDate ASC
+          LIMIT 1
+        `;
+        
+        const orderItemsResult = await this.conn.query(orderItemsQuery);
+        
+        if (orderItemsResult.records.length === 0) {
+          throw new Error(`No order items found for order ${returnRequest.orderId}`);
+        }
+        
+        actualLineItemId = (orderItemsResult.records[0] as any).Id;
+      } else {
+        // Validate line item ID format (Salesforce ID format)
+        if (!/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(returnRequest.lineItemId)) {
+          throw new Error('Invalid line item ID format. Must be a valid Salesforce ID (15 or 18 characters)');
+        }
       }
       
       const orderItemQuery = `
         SELECT Id, OrderId, Product2Id, Quantity, UnitPrice, Order.AccountId
         FROM OrderItem 
-        WHERE Id = '${returnRequest.lineItemId}'
+        WHERE Id = '${actualLineItemId}'
         LIMIT 1
       `;
       

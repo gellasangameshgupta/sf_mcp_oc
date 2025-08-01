@@ -17,7 +17,7 @@ export const OrderStatusSchema = z.object({
 
 export const ReturnRequestSchema = z.object({
   orderId: z.string(),
-  lineItemId: z.string(),
+  lineItemId: z.string(), // Can be Salesforce ID or 'AUTO_DETECT'
   reason: z.enum(['Defective', 'Damaged', 'Wrong Item', 'Not Needed', 'Quality Issue', 'Size/Color', 'Other']),
   quantity: z.number().min(1),
   description: z.string().optional()
