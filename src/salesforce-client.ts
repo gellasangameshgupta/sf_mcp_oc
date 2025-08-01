@@ -165,7 +165,7 @@ export class SalesforceClient {
       // Create ReturnOrderLineItem
       const returnLineItemRecord = {
         ReturnOrderId: returnOrderResult.id,
-        OrderItemId: returnRequest.lineItemId,
+        OrderItemId: actualLineItemId,
         Product2Id: orderItem.Product2Id,
         QuantityReturned: returnRequest.quantity,
         Description: returnRequest.description || `Return ${returnRequest.quantity} unit(s) - ${returnRequest.reason || 'No reason provided'}`,
