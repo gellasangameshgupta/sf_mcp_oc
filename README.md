@@ -464,6 +464,19 @@ For issues related to:
 
 *If you need anything more you can always reach out to me on my socials. You know where to find me*
 
+## 🤖 AI Assistance
+
+This project includes natural language interface and MCP server improvements developed with assistance from [Claude Code](https://claude.ai/code).
+
+**Key AI-Generated Features:**
+- Natural language HTML interface for Salesforce operations
+- Regex pattern improvements for handling multiple ID formats
+- MCP server architecture and implementation
+- Netlify Functions integration
+- Error handling and validation improvements
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
 ## 🔗 Resources
 1. **MCP Official Documentation** - https://modelcontextprotocol.io/docs/getting-started/intro
 2. **MCP Official Servers Github** - https://github.com/modelcontextprotocol/servers?tab=readme-ov-file
