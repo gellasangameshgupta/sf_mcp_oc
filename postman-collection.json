@@ -68,7 +68,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"lineItemId\": \"1\",\n    \"reason\": \"Defective\",\n    \"quantity\": 1,\n    \"description\": \"Product stopped working after 2 days\"\n  }\n}"
+          "raw": "{\n  \"name\": \"create_return\",\n  \"arguments\": {\n    \"orderId\": \"801xx0000000001\",\n    \"lineItemId\": \"802xx0000000001\",\n    \"reason\": \"Defective\",\n    \"quantity\": 1,\n    \"description\": \"Product stopped working after 2 days\"\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/tools-call",
