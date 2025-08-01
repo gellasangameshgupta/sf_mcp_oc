@@ -1,0 +1,25 @@
+[build]
+  command = "npm run build:netlify"
+  functions = "netlify/functions"
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/health"
+  status = 200
+
+[[redirects]]
+  from = "/mcp/tools/list"
+  to = "/.netlify/functions/tools-list"
+  status = 200
+
+[[redirects]]
+  from = "/mcp/tools/call"
+  to = "/.netlify/functions/tools-call"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"

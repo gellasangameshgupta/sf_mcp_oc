@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Order Concierge MCP Server</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .endpoint {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        .status.healthy { background: #d4edda; color: #155724; }
+        .code {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Salesforce Order Concierge</h1>
+        <p>MCP Server for Claude Desktop Integration</p>
+        <div id="status" class="status">Checking status...</div>
+    </div>
+
+    <h2>📋 Available Endpoints</h2>
+    
+    <div class="endpoint">
+        <h3>Health Check</h3>
+        <p><strong>GET</strong> <code>/health</code></p>
+        <p>Check server status and Salesforce connectivity</p>
+    </div>
+
+    <div class="endpoint">
+        <h3>List Tools</h3>
+        <p><strong>POST</strong> <code>/mcp/tools/list</code></p>
+        <p>Get available MCP tools</p>
+    </div>
+
+    <div class="endpoint">
+        <h3>Execute Tool</h3>
+        <p><strong>POST</strong> <code>/mcp/tools/call</code></p>
+        <p>Execute MCP tools with arguments</p>
+    </div>
+
+    <h2>🔧 Available Tools</h2>
+    <ul>
+        <li><strong>check_order_status</strong> - Check Salesforce order details</li>
+        <li><strong>create_return</strong> - Create return order requests</li>
+        <li><strong>email_return_label</strong> - Email return labels to customers</li>
+        <li><strong>update_case_status</strong> - Update support case status</li>
+        <li><strong>create_case_from_return</strong> - Create cases from returns</li>
+        <li><strong>send_slack_alert</strong> - Send Slack notifications</li>
+    </ul>
+
+    <h2>🧪 Test Example</h2>
+    <div class="code">
+curl -X POST https://your-site.netlify.app/mcp/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "check_order_status",
+    "arguments": {
+      "orderId": "00000100"
+    }
+  }'
+    </div>
+
+    <h2>📚 Documentation</h2>
+    <p>For complete setup instructions and usage examples, see the <a href="https://github.com/your-repo/sf_mcp_oc">GitHub repository</a>.</p>
+
+    <script>
+        // Check health status
+        fetch('/health')
+            .then(response => response.json())
+            .then(data => {
+                const statusEl = document.getElementById('status');
+                if (data.status === 'healthy') {
+                    statusEl.textContent = `✅ ${data.status} - Salesforce: ${data.salesforce}`;
+                    statusEl.className = 'status healthy';
+                } else {
+                    statusEl.textContent = `❌ ${data.status}`;
+                    statusEl.className = 'status error';
+                }
+            })
+            .catch(() => {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = '❌ Server Offline';
+                statusEl.className = 'status error';
+            });
+    </script>
+</body>
+</html>
